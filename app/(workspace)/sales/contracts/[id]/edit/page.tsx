@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { SalesDocumentForm } from "@/components/sales/SalesDocumentForm";
 
-export default function EditContractPage({ params }: { params: { id: string } }) {
+export default function EditContractPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDocument = async () => {
       try {
-        const res = await fetch(`/api/sales-documents/${params.id}`);
+        const res = await fetch(`/api/sales-documents/${resolvedParams.id}`);
         if (res.ok) {
           const data = await res.json();
           setDocument(data);
@@ -23,7 +25,7 @@ export default function EditContractPage({ params }: { params: { id: string } })
     };
 
     fetchDocument();
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   if (loading) {
     return <div className="p-8 text-center text-zinc-500">加载中...</div>;

@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth/server";
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { companyId } = await requireAuth();
@@ -13,7 +13,7 @@ export async function PUT(
     // Verify ownership
     const existing = await prisma.customerFollowUp.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId }
       }
     });
@@ -23,7 +23,7 @@ export async function PUT(
     }
 
     const followUp = await prisma.customerFollowUp.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         type: body.type,
         content: body.content,
@@ -44,7 +44,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { companyId } = await requireAuth();
@@ -52,7 +52,7 @@ export async function DELETE(
     // Verify ownership
     const existing = await prisma.customerFollowUp.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId }
       }
     });
@@ -62,7 +62,7 @@ export async function DELETE(
     }
 
     await prisma.customerFollowUp.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     return NextResponse.json({ success: true });

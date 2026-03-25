@@ -4,14 +4,14 @@ import { requireAuth } from "@/lib/auth/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { companyId } = await requireAuth();
 
     const source = await prisma.customerSource.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId,
       },
     });
@@ -28,7 +28,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { companyId } = await requireAuth();
@@ -36,7 +36,7 @@ export async function PUT(
 
     // Verify ownership
     const existing = await prisma.customerSource.findFirst({
-      where: { id: params.id, companyId },
+      where: { id: (await params).id, companyId },
     });
 
     if (!existing) {
@@ -48,7 +48,7 @@ export async function PUT(
     if (existing.name !== body.name) {
       await prisma.$transaction([
         prisma.customerSource.update({
-          where: { id: params.id },
+          where: { id: (await params).id },
           data: {
             name: body.name,
             description: body.description,
@@ -64,7 +64,7 @@ export async function PUT(
     }
 
     const source = await prisma.customerSource.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         name: body.name,
         description: body.description,
@@ -82,14 +82,14 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { companyId } = await requireAuth();
 
     // Verify ownership
     const existing = await prisma.customerSource.findFirst({
-      where: { id: params.id, companyId },
+      where: { id: (await params).id, companyId },
     });
 
     if (!existing) {
@@ -97,7 +97,7 @@ export async function DELETE(
     }
 
     await prisma.customerSource.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     return NextResponse.json({ success: true });

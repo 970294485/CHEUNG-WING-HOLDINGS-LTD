@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/server";
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { companyId } = await requireAuth();
 
     const document = await prisma.salesDocument.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId,
       },
       include: {
@@ -33,14 +33,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { companyId } = await requireAuth();
     const body = await request.json();
 
     // Verify ownership
     const existing = await prisma.salesDocument.findFirst({
-      where: { id: params.id, companyId },
+      where: { id: (await params).id, companyId },
     });
 
     if (!existing) {
@@ -48,7 +48,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const document = await prisma.salesDocument.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         customerId: body.customerId,
         date: new Date(body.date),
@@ -80,12 +80,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { companyId } = await requireAuth();
 
     const existing = await prisma.salesDocument.findFirst({
-      where: { id: params.id, companyId },
+      where: { id: (await params).id, companyId },
     });
 
     if (!existing) {
@@ -93,7 +93,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     await prisma.salesDocument.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     return NextResponse.json({ success: true });

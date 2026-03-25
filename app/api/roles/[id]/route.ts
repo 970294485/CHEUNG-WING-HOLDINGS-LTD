@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const companyId = await getDefaultCompanyId();
     const body = await req.json();
@@ -10,7 +10,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     // Verify role exists and belongs to company
     const existingRole = await prisma.role.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingRole || existingRole.companyId !== companyId) {
@@ -21,12 +21,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const role = await prisma.$transaction(async (tx) => {
       // First, delete existing permissions
       await tx.rolePermission.deleteMany({
-        where: { roleId: params.id },
+        where: { roleId: (await params).id },
       });
 
       // Then, update role and add new permissions
       return tx.role.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           name,
           description,
@@ -48,12 +48,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const companyId = await getDefaultCompanyId();
 
     const existingRole = await prisma.role.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: { _count: { select: { users: true } } },
     });
 
@@ -69,7 +69,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     }
 
     await prisma.role.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function QuoteDetailPage({ params }: { params: { id: string } }) {
+export default function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+
   const router = useRouter();
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     const fetchDocument = async () => {
       try {
-        const res = await fetch(`/api/sales-documents/${params.id}`);
+        const res = await fetch(`/api/sales-documents/${resolvedParams.id}`);
         if (res.ok) {
           const data = await res.json();
           setDocument(data);
@@ -35,11 +37,11 @@ export default function QuoteDetailPage({ params }: { params: { id: string } }) 
     };
 
     fetchDocument();
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const handleConvert = async () => {
     try {
-      const res = await fetch(`/api/sales-documents/${params.id}/convert`, {
+      const res = await fetch(`/api/sales-documents/${resolvedParams.id}/convert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetType: "CONTRACT" }),
