@@ -14,6 +14,7 @@ type Product = {
   price: any;
   cost: any;
   attributes: any;
+  attachments: any;
   createdAt: Date;
 };
 
