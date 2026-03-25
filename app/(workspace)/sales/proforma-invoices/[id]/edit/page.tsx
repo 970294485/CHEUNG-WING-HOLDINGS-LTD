@@ -1,0 +1,37 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { SalesDocumentForm } from "@/components/sales/SalesDocumentForm";
+
+export default function EditProformaInvoicePage({ params }: { params: { id: string } }) {
+  const [document, setDocument] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDocument = async () => {
+      try {
+        const res = await fetch(`/api/sales-documents/${params.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setDocument(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch document:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocument();
+  }, [params.id]);
+
+  if (loading) {
+    return <div className="p-8 text-center text-zinc-500">加载中...</div>;
+  }
+
+  if (!document) {
+    return <div className="p-8 text-center text-red-500">未找到预收发票</div>;
+  }
+
+  return <SalesDocumentForm type="PROFORMA_INVOICE" initialData={document} isEdit={true} />;
+}

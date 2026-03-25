@@ -1,0 +1,574 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  roles        UserRole[]
+}
+
+/// 公司（多租户预留）
+model Company {
+  id                   String               @id @default(cuid())
+  name                 String
+  code                 String               @unique
+  address              String?
+  phone                String?
+  email                String?
+  taxId                String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  accountingCategories AccountingCategory[]
+  payables             AccountsPayable[]
+  receivables          AccountsReceivable[]
+  budgetLines          BudgetLine[]
+  glAccounts           GlAccount[]
+  journalEntries       JournalEntry[]
+  paymentRequests      PaymentRequest[]
+  prepayments          Prepayment[]
+  roles                Role[]
+  userRoles            UserRole[]
+  documentRules        DocumentNumberRule[]
+  products             Product[]
+  inventoryBalances    InventoryBalance[]
+  inventoryTransactions InventoryTransaction[]
+  customerGroups       CustomerGroup[]
+  customerSources      CustomerSource[]
+  customers            Customer[]
+  salesDocuments       SalesDocument[]
+  purchaseOrders       PurchaseOrder[]
+  fileCategories       FileCategory[]
+  fileDocuments        FileDocument[]
+}
+
+/// 单号生成规则
+model DocumentNumberRule {
+  id          String   @id @default(cuid())
+  companyId   String
+  documentType String  // e.g., "INVOICE", "QUOTATION", "PO"
+  prefix      String   // e.g., "INV-"
+  dateFormat  String?  // e.g., "YYYYMM"
+  sequenceLen Int      @default(3) // e.g., 3 means 001
+  currentSeq  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, documentType])
+}
+
+/// 会计类别（入账分类）
+model AccountingCategory {
+  id           String        @id @default(cuid())
+  companyId    String
+  code         String
+  name         String
+  description  String?
+  createdAt    DateTime      @default(now())
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+
+  @@unique([companyId, code])
+}
+
+/// 总账科目 / 入账项目
+model GlAccount {
+  id           String        @id @default(cuid())
+  companyId    String
+  code         String
+  name         String
+  type         GlAccountType
+  parentId     String?
+  isActive     Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  budgetLines  BudgetLine[]
+  parent       GlAccount?    @relation("GlHierarchy", fields: [parentId], references: [id])
+  children     GlAccount[]   @relation("GlHierarchy")
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+
+  @@unique([companyId, code])
+}
+
+/// 会计凭证
+model JournalEntry {
+  id          String             @id @default(cuid())
+  companyId   String
+  entryNo     String
+  entryDate   DateTime
+  description String?
+  status      JournalEntryStatus @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines       JournalLine[]
+
+  @@unique([companyId, entryNo])
+}
+
+model JournalLine {
+  id                   String              @id @default(cuid())
+  journalEntryId       String
+  glAccountId          String
+  debit                Decimal             @default(0)
+  credit               Decimal             @default(0)
+  memo                 String?
+  accountingCategoryId String?
+  accountingCategory   AccountingCategory? @relation(fields: [accountingCategoryId], references: [id])
+  glAccount            GlAccount           @relation(fields: [glAccountId], references: [id])
+  journalEntry         JournalEntry        @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+}
+
+/// 月度预算（收入/支出）
+model BudgetLine {
+  id          String     @id @default(cuid())
+  companyId   String
+  year        Int
+  month       Int
+  glAccountId String
+  amount      Decimal
+  budgetType  BudgetType
+  note        String?
+  glAccount   GlAccount  @relation(fields: [glAccountId], references: [id])
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year, month, glAccountId, budgetType])
+}
+
+/// 请款单
+model PaymentRequest {
+  id            String               @id @default(cuid())
+  companyId     String
+  title         String
+  amount        Decimal
+  purpose       String?
+  status        PaymentRequestStatus @default(SUBMITTED)
+  requestedBy   String?
+  approvedBy    String?
+  approverRole  String?
+  createdAt     DateTime             @default(now())
+  approvedAt    DateTime?
+  attachmentUrl String?
+  category      String?
+  department    String?
+  company       Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+/// 预收款项（可与合同/发票 ID 文本关联）
+model Prepayment {
+  id                 String           @id @default(cuid())
+  companyId          String
+  amount             Decimal
+  payerName          String?
+  reference          String?
+  status             PrepaymentStatus @default(OPEN)
+  linkedDocumentType String?
+  linkedDocumentId   String?
+  receivedAt         DateTime         @default(now())
+  note               String?
+  company            Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+/// 应收账款
+model AccountsReceivable {
+  id             String     @id @default(cuid())
+  companyId      String
+  customerName   String
+  description    String?
+  amount         Decimal
+  receivedAmount Decimal    @default(0)
+  issueDate      DateTime   @default(now())
+  dueDate        DateTime?
+  invoiceNo      String?
+  status         ArApStatus @default(OPEN)
+  createdAt      DateTime   @default(now())
+  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+/// 应付账款
+model AccountsPayable {
+  id          String     @id @default(cuid())
+  companyId   String
+  vendorName  String
+  description String?
+  amount      Decimal
+  paidAmount  Decimal    @default(0)
+  issueDate   DateTime   @default(now())
+  dueDate     DateTime?
+  billNo      String?
+  status      ArApStatus @default(OPEN)
+  createdAt   DateTime   @default(now())
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+/// 角色
+model Role {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@unique([companyId, name])
+}
+
+/// 权限
+model Permission {
+  id          String   @id @default(cuid())
+  action      String   // e.g., "create", "read", "update", "delete", "manage"
+  resource    String   // e.g., "Product", "Invoice", "all"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles       RolePermission[]
+
+  @@unique([action, resource])
+}
+
+/// 角色与权限关联
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+/// 用户与角色关联（包含公司维度）
+model UserRole {
+  userId    String
+  roleId    String
+  companyId String
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId, companyId])
+}
+
+enum GlAccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+}
+
+enum BudgetType {
+  REVENUE
+  EXPENSE
+}
+
+enum PaymentRequestStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum PrepaymentStatus {
+  OPEN
+  PARTIALLY_APPLIED
+  CLOSED
+}
+
+enum ArApStatus {
+  OPEN
+  PARTIAL
+  CLOSED
+}
+
+/// 产品
+model Product {
+  id          String   @id @default(cuid())
+  companyId   String
+  sku         String
+  barcode     String?
+  name        String
+  description String?
+  attributes  Json?    // 动态属性
+  attachments Json?    // 图片/视频附件 URLs
+  price       Decimal  @default(0)
+  cost        Decimal  @default(0) // 移动平均成本
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  inventoryBalances InventoryBalance[]
+  inventoryTransactions InventoryTransaction[]
+  salesDocumentItems SalesDocumentItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@unique([companyId, sku])
+}
+
+/// 库存台账 (实时库存)
+model InventoryBalance {
+  id          String   @id @default(cuid())
+  companyId   String
+  productId   String
+  warehouseId String?  // 预留仓库ID
+  quantity    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, productId, warehouseId])
+}
+
+/// 库存交易记录 (出入库)
+model InventoryTransaction {
+  id              String   @id @default(cuid())
+  companyId       String
+  productId       String
+  type            TransactionType // IN, OUT
+  quantity        Int
+  unitCost        Decimal? // 交易时的单位成本
+  referenceType   String?  // 如 "PO", "SO", "MANUAL", "INITIAL"
+  referenceId     String?  // 关联单据ID
+  createdAt       DateTime @default(now())
+  createdBy       String?
+
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+/// 客户分组
+model CustomerGroup {
+  id          String     @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customers   Customer[]
+
+  @@unique([companyId, name])
+}
+
+/// 客户来源字典
+model CustomerSource {
+  id          String     @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, name])
+}
+
+/// 客户档案
+model Customer {
+  id            String             @id @default(cuid())
+  companyId     String
+  code          String?            // 客户编号
+  name          String             // 客户/企业名称
+  contactPerson String?            // 联系人
+  email         String?            // 邮箱
+  phone         String?            // 电话
+  address       String?            // 地址
+  taxId         String?            // 税号
+  source        String?            // 客户来源 (如: 展会, 官网, 推荐)
+  status        String             @default("ACTIVE") // 状态 (如: ACTIVE, INACTIVE, LEAD)
+  groupId       String?            // 所属分组
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  company       Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  group         CustomerGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  followUps     CustomerFollowUp[]
+  salesDocuments SalesDocument[]
+
+  @@unique([companyId, code])
+}
+
+/// 客户跟进记录
+model CustomerFollowUp {
+  id          String   @id @default(cuid())
+  customerId  String
+  type        String   // 跟进方式 (如: EMAIL, PHONE, MEETING)
+  content     String   // 跟进内容
+  date        DateTime @default(now()) // 跟进时间
+  createdBy   String?  // 跟进人 (关联 User ID)
+  createdAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+/// 销售单据类型
+enum SalesDocumentType {
+  QUOTATION
+  CONTRACT
+  PROFORMA_INVOICE
+}
+
+/// 销售单据状态
+enum SalesDocumentStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+/// 销售单据 (报价单 / 合同 / 预收发票)
+model SalesDocument {
+  id          String              @id @default(cuid())
+  companyId   String
+  type        SalesDocumentType
+  documentNo  String              // 单号
+  customerId  String
+  date        DateTime            @default(now())
+  dueDate     DateTime?
+  totalAmount Decimal             @default(0)
+  status      SalesDocumentStatus @default(DRAFT)
+  notes       String?
+  
+  // 关联上下游单据
+  parentId    String?
+  parent      SalesDocument?      @relation("DocumentLineage", fields: [parentId], references: [id])
+  children    SalesDocument[]     @relation("DocumentLineage")
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer    Customer            @relation(fields: [customerId], references: [id])
+  items       SalesDocumentItem[]
+
+  @@unique([companyId, type, documentNo])
+}
+
+/// 销售单据明细
+model SalesDocumentItem {
+  id              String        @id @default(cuid())
+  salesDocumentId String
+  productId       String
+  quantity        Int
+  unitPrice       Decimal
+  discount        Decimal       @default(0)
+  taxRate         Decimal       @default(0)
+  total           Decimal
+
+  salesDocument   SalesDocument @relation(fields: [salesDocumentId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+}
+
+/// 采购单状态
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+/// 采购单
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  companyId   String
+  poNumber    String              // 采购单号
+  vendorName  String              // 供应商名称
+  date        DateTime            @default(now())
+  expectedDate DateTime?          // 预计交货日期
+  totalAmount Decimal             @default(0)
+  status      PurchaseOrderStatus @default(DRAFT)
+  notes       String?
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items       PurchaseOrderItem[]
+
+  @@unique([companyId, poNumber])
+}
+
+/// 采购单明细
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Int
+  unitPrice       Decimal
+  total           Decimal
+
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+}
+
+/// 文件分类 (文件夹)
+model FileCategory {
+  id          String         @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  parentId    String?
+  ownerId     String?        // 关联 User ID (如果是个人分类)
+  isPublic    Boolean        @default(false) // 是否为公共分类
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent      FileCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    FileCategory[] @relation("CategoryHierarchy")
+  files       FileDocument[]
+
+  @@unique([companyId, parentId, name])
+}
+
+/// 文件记录
+model FileDocument {
+  id          String        @id @default(cuid())
+  companyId   String
+  categoryId  String?
+  name        String
+  size        Int           // 文件大小(字节)
+  url         String        // 存储路径或URL
+  mimeType    String?
+  ownerId     String?       // 上传者 User ID
+  isPublic    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category    FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+}
+
