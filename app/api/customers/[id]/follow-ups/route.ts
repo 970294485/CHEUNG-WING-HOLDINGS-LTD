@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         customerId: (await params).id,
         type: body.type || "NOTE",
         content: body.content,
-        createdBy: user.id,
+        createdBy: user.sub,
       },
     });
 
