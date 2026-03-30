@@ -28,7 +28,7 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
   }, [resolvedParams.id]);
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500">加载中...</div>;
+    return <div className="p-8 text-center text-zinc-500">加載中...</div>;
   }
 
   if (!document) {

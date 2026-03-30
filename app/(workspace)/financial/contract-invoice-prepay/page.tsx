@@ -29,9 +29,9 @@ export default async function ContractInvoicePrepayPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">合同與發票預收對接 (Matching Logic)</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">預收款對接 (Matching Logic)</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          防止漏收或重複收款，自動關聯預收款與合同/發票。
+          每一筆收款都必須開立發票，在此將預收款與合同/發票進行對接處理。
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default async function ContractInvoicePrepayPage() {
           </div>
           <div className="ml-3 flex-1 md:flex md:justify-between">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>自動關聯提示：</strong> 客戶 <strong>Tech Corp</strong> 尚有 <span className="font-bold">$5,000.00</span> 預收款未處理，是否衝抵當前待開發票？
+              <strong>自動關聯提示：</strong> 客戶 <strong>Tech Corp</strong> 尚有 <span className="font-bold">$5,000.00</span> 預收款未處理，是否立即對接並開立發票？
             </p>
             <p className="mt-2 text-sm md:mt-0 md:ml-6">
               <button className="whitespace-nowrap font-medium text-blue-700 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
@@ -58,7 +58,7 @@ export default async function ContractInvoicePrepayPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <h3 className="text-sm font-semibold mb-4">衝抵表單</h3>
+          <h3 className="text-sm font-semibold mb-4">對接處理表單</h3>
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-zinc-500 mb-1">發票總額</label>
@@ -69,7 +69,7 @@ export default async function ContractInvoicePrepayPage() {
               <div className="text-lg font-medium text-emerald-600 dark:text-emerald-400">$5,000.00</div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">本次衝抵金額 (可手動修改)</label>
+              <label className="block text-xs font-medium text-zinc-500 mb-1">本次對接金額 (可手動修改)</label>
               <input
                 type="number"
                 defaultValue="5000.00"
@@ -78,10 +78,10 @@ export default async function ContractInvoicePrepayPage() {
             </div>
             <div className="pt-2 flex gap-3">
               <button className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-                一鍵衝抵
+                一鍵對接
               </button>
               <button className="flex-1 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900">
-                生成差額髮票
+                生成差額發票
               </button>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default async function ContractInvoicePrepayPage() {
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-          <h3 className="text-sm font-semibold">合同衝抵明細</h3>
+          <h3 className="text-sm font-semibold">合同對接明細</h3>
         </div>
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
@@ -126,7 +126,7 @@ export default async function ContractInvoicePrepayPage() {
                 <td className="px-4 py-2">
                   {c.status !== '已結清' && (
                     <button className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      處理衝抵
+                      處理對接
                     </button>
                   )}
                 </td>

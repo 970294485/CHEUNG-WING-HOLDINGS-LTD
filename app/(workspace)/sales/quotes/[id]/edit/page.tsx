@@ -28,11 +28,11 @@ export default function EditQuotePage({ params }: { params: Promise<{ id: string
   }, [resolvedParams.id]);
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500">加载中...</div>;
+    return <div className="p-8 text-center text-zinc-500">加載中...</div>;
   }
 
   if (!document) {
-    return <div className="p-8 text-center text-red-500">未找到报价单</div>;
+    return <div className="p-8 text-center text-red-500">未找到報價單</div>;
   }
 
   return <SalesDocumentForm type="QUOTATION" initialData={document} isEdit={true} />;

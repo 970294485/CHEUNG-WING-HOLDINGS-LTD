@@ -28,11 +28,11 @@ export default function EditProformaInvoicePage({ params }: { params: Promise<{ 
   }, [resolvedParams.id]);
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500">加载中...</div>;
+    return <div className="p-8 text-center text-zinc-500">加載中...</div>;
   }
 
   if (!document) {
-    return <div className="p-8 text-center text-red-500">未找到预收发票</div>;
+    return <div className="p-8 text-center text-red-500">未找到預收發票</div>;
   }
 
   return <SalesDocumentForm type="PROFORMA_INVOICE" initialData={document} isEdit={true} />;

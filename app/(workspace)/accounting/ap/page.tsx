@@ -26,12 +26,21 @@ export default async function AccountsPayablePage() {
       <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
         <h3 className="text-sm font-semibold">登記應付</h3>
         <form action={createPayable} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <input
-            name="vendorName"
-            placeholder="供應商名稱"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
-            required
-          />
+          <div className="flex flex-col gap-1">
+            <input
+              name="vendorName"
+              placeholder="供應商名稱"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <input
+              name="customerId"
+              placeholder="供應商 ID (選填，用於關聯客戶/供應商檔案)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+            />
+          </div>
           <input
             name="amount"
             placeholder="應付金額"

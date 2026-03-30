@@ -30,7 +30,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           setDocument(data);
         }
       } catch (error) {
-        console.error("获取合同失败:", error);
+        console.error("獲取合同失敗:", error);
       } finally {
         setLoading(false);
       }
@@ -47,14 +47,14 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
         body: JSON.stringify({ targetType: "PROFORMA_INVOICE" }),
       });
       if (res.ok) {
-        alert("已成功生成预收发票！");
+        alert("已成功生成預收發票！");
         router.push("/sales/proforma-invoices");
       } else {
         const err = await res.json();
-        alert(`生成失败: ${err.error}`);
+        alert(`生成失敗: ${err.error}`);
       }
     } catch (error) {
-      alert("生成失败");
+      alert("生成失敗");
     }
   };
 
@@ -63,13 +63,13 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
       const { exportDocumentToPDF } = await import("@/lib/utils/pdf-export");
       exportDocumentToPDF(document, "Contract");
     } catch (error) {
-      console.error("导出 PDF 失败:", error);
-      alert("导出失败");
+      console.error("導出 PDF 失敗:", error);
+      alert("導出失敗");
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-zinc-500">加载中...</div>;
+    return <div className="p-8 text-center text-zinc-500">加載中...</div>;
   }
 
   if (!document) {
@@ -84,7 +84,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">合同详情</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">合同詳情</h1>
             <p className="text-sm text-zinc-500 mt-1">{document.documentNo}</p>
           </div>
         </div>
@@ -96,12 +96,12 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
             >
               <ArrowRight className="mr-2 h-4 w-4" />
-              转预收发票
+              轉預收發票
             </Button>
           )}
           <Button variant="outline" onClick={handleExportPDF}>
             <FileDown className="mr-2 h-4 w-4" />
-            导出 PDF
+            導出 PDF
           </Button>
         </div>
       </div>
@@ -113,10 +113,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-sm text-zinc-500">单号</div>
+              <div className="text-sm text-zinc-500">單號</div>
               <div className="col-span-2 font-medium">{document.documentNo}</div>
               
-              <div className="text-sm text-zinc-500">客户</div>
+              <div className="text-sm text-zinc-500">客戶</div>
               <div className="col-span-2">{document.customer?.name || "-"}</div>
               
               <div className="text-sm text-zinc-500">日期</div>
@@ -125,7 +125,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               <div className="text-sm text-zinc-500">有效期限</div>
               <div className="col-span-2">{document.dueDate ? new Date(document.dueDate).toLocaleDateString() : "-"}</div>
               
-              <div className="text-sm text-zinc-500">状态</div>
+              <div className="text-sm text-zinc-500">狀態</div>
               <div className="col-span-2">
                 <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                   {document.status}
@@ -137,35 +137,35 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
 
         <Card>
           <CardHeader>
-            <CardTitle>备注信息</CardTitle>
+            <CardTitle>備註信息</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm whitespace-pre-wrap">{document.notes || "无备注"}</p>
+            <p className="text-sm whitespace-pre-wrap">{document.notes || "無備註"}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>产品明细</CardTitle>
+          <CardTitle>產品明細</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>产品名称</TableHead>
+                <TableHead>產品名稱</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead className="text-right">数量</TableHead>
-                <TableHead className="text-right">单价</TableHead>
+                <TableHead className="text-right">數量</TableHead>
+                <TableHead className="text-right">單價</TableHead>
                 <TableHead className="text-right">折扣(%)</TableHead>
-                <TableHead className="text-right">税率(%)</TableHead>
-                <TableHead className="text-right">小计</TableHead>
+                <TableHead className="text-right">稅率(%)</TableHead>
+                <TableHead className="text-right">小計</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {document.items?.map((item: any) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.product?.name || "未知产品"}</TableCell>
+                  <TableCell className="font-medium">{item.product?.name || "未知產品"}</TableCell>
                   <TableCell>{item.product?.sku || "-"}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">¥{Number(item.unitPrice).toLocaleString()}</TableCell>
@@ -179,7 +179,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           
           <div className="flex justify-end pt-6 mt-6 border-t">
             <div className="text-right">
-              <p className="text-sm text-zinc-500 mb-1">总计金额</p>
+              <p className="text-sm text-zinc-500 mb-1">總計金額</p>
               <p className="text-3xl font-bold text-zinc-900 dark:text-white">
                 ¥{Number(document.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>

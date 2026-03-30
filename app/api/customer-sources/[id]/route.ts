@@ -74,7 +74,7 @@ export async function PUT(
     return NextResponse.json(source);
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "该来源名称已存在" }, { status: 400 });
+      return NextResponse.json({ error: "該來源名稱已存在" }, { status: 400 });
     }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

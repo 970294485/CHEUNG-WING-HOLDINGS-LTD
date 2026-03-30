@@ -27,7 +27,7 @@ export default function QuotesPage() {
         setDocuments(data);
       }
     } catch (error) {
-      console.error("获取报价单失败:", error);
+      console.error("獲取報價單失敗:", error);
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,15 @@ export default function QuotesPage() {
         body: JSON.stringify({ targetType: "CONTRACT" }),
       });
       if (res.ok) {
-        alert("已成功转换为合同！");
+        alert("已成功轉換為合同！");
         fetchDocuments();
         router.push("/sales/contracts");
       } else {
         const err = await res.json();
-        alert(`转换失败: ${err.error}`);
+        alert(`轉換失敗: ${err.error}`);
       }
     } catch (error) {
-      alert("转换失败");
+      alert("轉換失敗");
     }
   };
 
@@ -66,27 +66,27 @@ export default function QuotesPage() {
         exportDocumentToPDF(data, "Quotation");
       }
     } catch (error) {
-      console.error("导出 PDF 失败:", error);
-      alert("导出失败");
+      console.error("導出 PDF 失敗:", error);
+      alert("導出失敗");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除此报价单吗？此操作不可恢复。")) return;
+    if (!confirm("確定要刪除此報價單嗎？此操作不可恢復。")) return;
     
     try {
       const res = await fetch(`/api/sales-documents/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        alert("删除成功");
+        alert("刪除成功");
         fetchDocuments();
       } else {
         const err = await res.json();
-        alert(`删除失败: ${err.error}`);
+        alert(`刪除失敗: ${err.error}`);
       }
     } catch (error) {
-      alert("删除失败");
+      alert("刪除失敗");
     }
   };
 
@@ -95,9 +95,9 @@ export default function QuotesPage() {
       case "DRAFT":
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">草稿</span>;
       case "PENDING":
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">待处理</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">待處理</span>;
       case "CONFIRMED":
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">已确认</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">已確認</span>;
       case "CANCELLED":
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">已取消</span>;
       case "COMPLETED":
@@ -111,12 +111,12 @@ export default function QuotesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">报价单 (見積) 管理</h1>
-          <p className="text-sm text-zinc-500 mt-1">管理客户报价单，支持一键转为销售合同。</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">報價單 (見積) 管理</h1>
+          <p className="text-sm text-zinc-500 mt-1">管理客戶報價單，支持一鍵轉為銷售合同。</p>
         </div>
         <Button onClick={() => router.push("/sales/quotes/new")}>
           <Plus className="mr-2 h-4 w-4" />
-          新增报价单
+          新增報價單
         </Button>
       </div>
 
@@ -124,22 +124,22 @@ export default function QuotesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>单号</TableHead>
-              <TableHead>客户</TableHead>
+              <TableHead>單號</TableHead>
+              <TableHead>客戶</TableHead>
               <TableHead>日期</TableHead>
-              <TableHead>总金额</TableHead>
-              <TableHead>状态</TableHead>
+              <TableHead>總金額</TableHead>
+              <TableHead>狀態</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">加载中...</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">加載中...</TableCell>
               </TableRow>
             ) : documents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">暂无报价单数据</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">暫無報價單數據</TableCell>
               </TableRow>
             ) : (
               documents.map((doc) => (
@@ -159,7 +159,7 @@ export default function QuotesPage() {
                           className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
                         >
                           <ArrowRight className="mr-1 h-3 w-3" />
-                          转合同
+                          轉合同
                         </Button>
                       )}
                       <Button
@@ -168,7 +168,7 @@ export default function QuotesPage() {
                         onClick={() => handleExportPDF(doc.id)}
                       >
                         <FileDown className="mr-1 h-3 w-3" />
-                        导出 PDF
+                        導出 PDF
                       </Button>
                       <Button
                         variant="ghost"
@@ -176,7 +176,7 @@ export default function QuotesPage() {
                         onClick={() => router.push(`/sales/quotes/${doc.id}`)}
                       >
                         <FileText className="mr-1 h-3 w-3" />
-                        详情
+                        詳情
                       </Button>
                       <Button
                         variant="ghost"
@@ -184,7 +184,7 @@ export default function QuotesPage() {
                         onClick={() => router.push(`/sales/quotes/${doc.id}/edit`)}
                       >
                         <Edit className="mr-1 h-3 w-3" />
-                        编辑
+                        編輯
                       </Button>
                       <Button
                         variant="ghost"
@@ -193,7 +193,7 @@ export default function QuotesPage() {
                         onClick={() => handleDelete(doc.id)}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
-                        删除
+                        刪除
                       </Button>
                     </div>
                   </TableCell>

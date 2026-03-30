@@ -29,12 +29,20 @@ export default async function PrepaymentsPage() {
       <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
         <h3 className="text-sm font-semibold">預收款表單 (Pre-payment Form)</h3>
         <form action={createPrepayment} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <input
-            name="payerName"
-            placeholder="客戶名稱"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
-            required
-          />
+          <div className="flex flex-col gap-1">
+            <input
+              name="payerName"
+              placeholder="客戶名稱 (選填，若有關聯客戶則自動帶入)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <input
+              name="customerId"
+              placeholder="客戶 ID (選填，用於關聯客戶檔案)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+            />
+          </div>
           <input
             name="amount"
             type="number"

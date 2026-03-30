@@ -123,11 +123,11 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerId) {
-      alert("请选择客户");
+      alert("請選擇客戶");
       return;
     }
     if (formData.items.some((item) => !item.productId)) {
-      alert("请选择产品");
+      alert("請選擇產品");
       return;
     }
 
@@ -152,7 +152,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
       });
 
       if (res.ok) {
-        alert(isEdit ? "更新成功！" : "创建成功！");
+        alert(isEdit ? "更新成功！" : "創建成功！");
         
         // Redirect based on type
         if (type === "QUOTATION") router.push("/sales/quotes");
@@ -161,22 +161,22 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
         
       } else {
         const err = await res.json();
-        alert(`操作失败: ${err.error}`);
+        alert(`操作失敗: ${err.error}`);
       }
     } catch (error) {
       console.error("Error saving document:", error);
-      alert("操作失败，请重试");
+      alert("操作失敗，請重試");
     } finally {
       setLoading(false);
     }
   };
 
   const getTitle = () => {
-    const action = isEdit ? "编辑" : "新增";
-    if (type === "QUOTATION") return `${action}报价单 (見積)`;
+    const action = isEdit ? "編輯" : "新增";
+    if (type === "QUOTATION") return `${action}報價單 (見積)`;
     if (type === "CONTRACT") return `${action}合同`;
-    if (type === "PROFORMA_INVOICE") return `${action}预收发票`;
-    return `${action}单据`;
+    if (type === "PROFORMA_INVOICE") return `${action}預收發票`;
+    return `${action}單據`;
   };
 
   return (
@@ -197,13 +197,22 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="customer">客户 <span className="text-red-500">*</span></Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="customer">客戶 <span className="text-red-500">*</span></Label>
+                <button
+                  type="button"
+                  onClick={() => router.push("/customers/list/new")}
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  + 新增客戶
+                </button>
+              </div>
               <Select
                 value={formData.customerId}
                 onValueChange={(value) => setFormData({ ...formData, customerId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择客户" />
+                  <SelectValue placeholder="選擇客戶" />
                 </SelectTrigger>
                 <SelectContent>
                   {customers.map((c) => (
@@ -235,18 +244,18 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">状态</Label>
+              <Label htmlFor="status">狀態</Label>
               <Select
                 value={formData.status}
                 onValueChange={(value) => setFormData({ ...formData, status: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder="選擇狀態" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DRAFT">草稿 (Draft)</SelectItem>
-                  <SelectItem value="PENDING">待处理 (Pending)</SelectItem>
-                  <SelectItem value="CONFIRMED">已确认 (Confirmed)</SelectItem>
+                  <SelectItem value="PENDING">待處理 (Pending)</SelectItem>
+                  <SelectItem value="CONFIRMED">已確認 (Confirmed)</SelectItem>
                   <SelectItem value="CANCELLED">已取消 (Cancelled)</SelectItem>
                   <SelectItem value="COMPLETED">已完成 (Completed)</SelectItem>
                 </SelectContent>
@@ -254,10 +263,10 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes">备注</Label>
+              <Label htmlFor="notes">備註</Label>
               <Textarea
                 id="notes"
-                placeholder="输入备注信息..."
+                placeholder="輸入備註信息..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
@@ -268,23 +277,23 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>产品明细</CardTitle>
+            <CardTitle>產品明細</CardTitle>
             <Button type="button" variant="outline" size="sm" onClick={addItem}>
               <Plus className="mr-2 h-4 w-4" />
-              添加产品
+              添加產品
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {formData.items.map((item, index) => (
               <div key={index} className="grid grid-cols-12 gap-4 items-end border p-4 rounded-lg bg-zinc-50/50 dark:bg-zinc-900/50">
                 <div className="col-span-12 md:col-span-3 space-y-2">
-                  <Label>产品 <span className="text-red-500">*</span></Label>
+                  <Label>產品 <span className="text-red-500">*</span></Label>
                   <Select
                     value={item.productId}
                     onValueChange={(value) => handleItemChange(index, "productId", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择产品" />
+                      <SelectValue placeholder="選擇產品" />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((p) => (
@@ -295,7 +304,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
                 </div>
 
                 <div className="col-span-6 md:col-span-2 space-y-2">
-                  <Label>数量</Label>
+                  <Label>數量</Label>
                   <Input
                     type="number"
                     min="1"
@@ -305,7 +314,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
                 </div>
 
                 <div className="col-span-6 md:col-span-2 space-y-2">
-                  <Label>单价</Label>
+                  <Label>單價</Label>
                   <Input
                     type="number"
                     min="0"
@@ -327,7 +336,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
                 </div>
 
                 <div className="col-span-4 md:col-span-1 space-y-2">
-                  <Label>税率(%)</Label>
+                  <Label>稅率(%)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -338,7 +347,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
                 </div>
 
                 <div className="col-span-4 md:col-span-2 space-y-2">
-                  <Label>小计</Label>
+                  <Label>小計</Label>
                   <Input
                     type="number"
                     readOnly
@@ -364,7 +373,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
 
             <div className="flex justify-end pt-4 border-t mt-6">
               <div className="text-right">
-                <p className="text-sm text-zinc-500 mb-1">总计金额</p>
+                <p className="text-sm text-zinc-500 mb-1">總計金額</p>
                 <p className="text-3xl font-bold text-zinc-900 dark:text-white">
                   ¥{calculateTotalAmount().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>

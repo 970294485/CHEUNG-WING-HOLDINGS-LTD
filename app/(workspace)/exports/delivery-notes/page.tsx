@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/table";
 import { Download, Search, FileSpreadsheet, Truck } from "lucide-react";
 
-// 模拟送货单数据
+// 模擬送貨單數據
 const mockDeliveryNotes = [
-  { id: "DN-2024-001", orderId: "SO-2024-089", customer: "科技发展有限公司", date: "2024-03-20", address: "北京市海淀区科技园1号", status: "已送达" },
-  { id: "DN-2024-002", orderId: "SO-2024-090", customer: "全球贸易集团", date: "2024-03-21", address: "上海市朝阳区贸易大厦5层", status: "配送中" },
-  { id: "DN-2024-003", orderId: "SO-2024-092", customer: "创新科技有限公司", date: "2024-03-22", address: "深圳市浦东新区创新路8号", status: "已送达" },
-  { id: "DN-2024-004", orderId: "SO-2024-095", customer: "未来网络", date: "2024-03-23", address: "广州市南山区未来广场A座", status: "待发货" },
-  { id: "DN-2024-005", orderId: "SO-2024-098", customer: "星辰实业", date: "2024-03-24", address: "成都市天河区星辰工业园", status: "配送中" },
+  { id: "DN-2024-001", orderId: "SO-2024-089", customer: "科技發展有限公司", date: "2024-03-20", address: "北京市海淀區科技園1號", status: "已送達" },
+  { id: "DN-2024-002", orderId: "SO-2024-090", customer: "全球貿易集團", date: "2024-03-21", address: "上海市朝陽區貿易大廈5層", status: "配送中" },
+  { id: "DN-2024-003", orderId: "SO-2024-092", customer: "創新科技有限公司", date: "2024-03-22", address: "深圳市浦東新區創新路8號", status: "已送達" },
+  { id: "DN-2024-004", orderId: "SO-2024-095", customer: "未來網絡", date: "2024-03-23", address: "廣州市南山區未來廣場A座", status: "待發貨" },
+  { id: "DN-2024-005", orderId: "SO-2024-098", customer: "星辰實業", date: "2024-03-24", address: "成都市天河區星辰工業園", status: "配送中" },
 ];
 
 export default function DeliveryNotesExportPage() {
@@ -36,10 +36,10 @@ export default function DeliveryNotesExportPage() {
 
   const handleExport = () => {
     setIsExporting(true);
-    // 模拟导出延迟
+    // 模擬導出延遲
     setTimeout(() => {
       setIsExporting(false);
-      alert("送货单数据已成功导出为 Excel 文件！");
+      alert("送貨單數據已成功導出為 Excel 文件！");
     }, 1500);
   };
 
@@ -47,9 +47,9 @@ export default function DeliveryNotesExportPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">送货单导出</h1>
+          <h1 className="text-2xl font-bold tracking-tight">送貨單導出</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            管理并导出系统中的送货单及物流数据（支持 Excel 等格式）
+            管理並導出系統中的送貨單及物流數據（支持 Excel 等格式）
           </p>
         </div>
         <Button onClick={handleExport} disabled={isExporting} className="gap-2">
@@ -58,20 +58,20 @@ export default function DeliveryNotesExportPage() {
           ) : (
             <FileSpreadsheet className="h-4 w-4" />
           )}
-          {isExporting ? "导出中..." : "导出为 Excel"}
+          {isExporting ? "導出中..." : "導出為 Excel"}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>送货单列表</CardTitle>
+          <CardTitle>送貨單列表</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="搜索送货单号、订单号或客户名称..."
+                placeholder="搜索送貨單號、訂單號或客戶名稱..."
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -86,12 +86,12 @@ export default function DeliveryNotesExportPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>送货单编号</TableHead>
-                  <TableHead>关联订单号</TableHead>
-                  <TableHead>客户名称</TableHead>
-                  <TableHead>送货日期</TableHead>
-                  <TableHead>送货地址</TableHead>
-                  <TableHead>状态</TableHead>
+                  <TableHead>送貨單編號</TableHead>
+                  <TableHead>關聯訂單號</TableHead>
+                  <TableHead>客戶名稱</TableHead>
+                  <TableHead>送貨日期</TableHead>
+                  <TableHead>送貨地址</TableHead>
+                  <TableHead>狀態</TableHead>
                   <TableHead className="text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -114,7 +114,7 @@ export default function DeliveryNotesExportPage() {
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-xs ${
-                            note.status === "已送达"
+                            note.status === "已送達"
                               ? "bg-green-100 text-green-700"
                               : note.status === "配送中"
                               ? "bg-blue-100 text-blue-700"
@@ -127,7 +127,7 @@ export default function DeliveryNotesExportPage() {
                       <TableCell className="text-center">
                         <Button variant="ghost" size="sm" className="gap-1">
                           <Download className="h-4 w-4" />
-                          下载 PDF
+                          下載 PDF
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -135,7 +135,7 @@ export default function DeliveryNotesExportPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      没有找到匹配的送货单记录
+                      沒有找到匹配的送貨單記錄
                     </TableCell>
                   </TableRow>
                 )}

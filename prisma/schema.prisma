@@ -172,13 +172,16 @@ model Prepayment {
   companyId          String
   amount             Decimal
   payerName          String?
+  customerId         String?          // 關聯到客戶
   reference          String?
   status             PrepaymentStatus @default(OPEN)
   linkedDocumentType String?
   linkedDocumentId   String?
   receivedAt         DateTime         @default(now())
   note               String?
+  
   company            Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer           Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
 
 /// 应收账款
@@ -186,6 +189,7 @@ model AccountsReceivable {
   id             String     @id @default(cuid())
   companyId      String
   customerName   String
+  customerId     String?    // 關聯到客戶
   description    String?
   amount         Decimal
   receivedAmount Decimal    @default(0)
@@ -194,7 +198,9 @@ model AccountsReceivable {
   invoiceNo      String?
   status         ArApStatus @default(OPEN)
   createdAt      DateTime   @default(now())
+  
   company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer       Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
 
 /// 应付账款
@@ -202,6 +208,7 @@ model AccountsPayable {
   id          String     @id @default(cuid())
   companyId   String
   vendorName  String
+  customerId  String?    // 關聯到客戶/供應商
   description String?
   amount      Decimal
   paidAmount  Decimal    @default(0)
@@ -210,7 +217,9 @@ model AccountsPayable {
   billNo      String?
   status      ArApStatus @default(OPEN)
   createdAt   DateTime   @default(now())
+  
   company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer    Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
 
 /// 角色
@@ -415,6 +424,9 @@ model Customer {
   group         CustomerGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   followUps     CustomerFollowUp[]
   salesDocuments SalesDocument[]
+  prepayments   Prepayment[]
+  receivables   AccountsReceivable[]
+  payables      AccountsPayable[]
 
   @@unique([companyId, code])
 }

@@ -31,7 +31,7 @@ function money(d: Prisma.Decimal | number) {
 
 export default async function DashboardPage() {
   const session = await getSession();
-  const userName = session?.name || "财务专员";
+  const userName = session?.name || "財務專員";
 
   const companyId = await getDefaultCompanyId();
   const now = new Date();
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
   const arOutstanding = arOpen.reduce((s, r) => s + (Number(r.amount) - Number(r.receivedAmount)), 0);
   const apOutstanding = apOpen.reduce((s, r) => s + (Number(r.amount) - Number(r.paidAmount)), 0);
 
-  const today = new Date().toLocaleDateString("zh-CN", {
+  const today = new Date().toLocaleDateString("zh-TW", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -67,10 +67,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      {/* 1. 顶部：欢迎区与快捷操作 */}
+      {/* 1. 頂部：歡迎區與快捷操作 */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">财务工作台</h1>
+          <h1 className="text-2xl font-bold tracking-tight">企業工作台</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             早上好，{userName}！今天是 {today}。
             <span className="ml-2 text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
@@ -79,60 +79,61 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <QuickActionButton href="/accounting/journals/new" icon={<FileText className="h-4 w-4" />} label="录入凭证" />
-          <QuickActionButton href="/financial/prepayments" icon={<Banknote className="h-4 w-4" />} label="登记预收款" />
-          <QuickActionButton href="/financial/payment-requests" icon={<CheckCircle className="h-4 w-4" />} label="请款审批" />
-          <QuickActionButton href="/reports/export" icon={<FileSpreadsheet className="h-4 w-4" />} label="导出报表" />
+          <QuickActionButton href="/customers/list/new" icon={<FileText className="h-4 w-4" />} label="新增客戶" />
+          <QuickActionButton href="/sales/quotes/new" icon={<FileText className="h-4 w-4" />} label="新增報價單" />
+          <QuickActionButton href="/accounting/journals/new" icon={<FileText className="h-4 w-4" />} label="錄入憑證" />
+          <QuickActionButton href="/financial/prepayments" icon={<Banknote className="h-4 w-4" />} label="登記預收款" />
+          <QuickActionButton href="/financial/payment-requests" icon={<CheckCircle className="h-4 w-4" />} label="請款審批" />
         </div>
       </div>
 
-      {/* 3. 数据概览：财务关键指标看板 */}
+      {/* 3. 數據概覽：財務關鍵指標看板 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="本月净利"
+          title="本月淨利"
           value={`¥${pl.netIncome}`}
-          description="本月利润和损失"
+          description="本月利潤和損失"
           icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
           trend="up"
         />
         <StatCard
-          title="应收未结 (AR)"
+          title="應收未結 (AR)"
           value={`¥${money(arOutstanding)}`}
-          description={`${arOpen.length} 笔待收款`}
+          description={`${arOpen.length} 筆待收款`}
           icon={<Landmark className="h-4 w-4 text-blue-500" />}
           trend="warning"
         />
         <StatCard
-          title="应付未结 (AP)"
+          title="應付未結 (AP)"
           value={`¥${money(apOutstanding)}`}
-          description={`${apOpen.length} 笔待付款`}
+          description={`${apOpen.length} 筆待付款`}
           icon={<CreditCard className="h-4 w-4 text-orange-500" />}
           trend="neutral"
         />
         <StatCard
-          title="预收款 (未关闭)"
+          title="預收款 (未關閉)"
           value={`¥${money(prepay._sum.amount ?? 0)}`}
-          description="待核销的预收款项"
+          description="待核銷的預收款項"
           icon={<Wallet className="h-4 w-4 text-zinc-500" />}
           trend="neutral"
         />
       </div>
 
       <div className="grid gap-6 md:grid-cols-7">
-        {/* 2. 核心关注：财务待办与提醒 (占据左侧大块) */}
+        {/* 2. 核心關注：財務待辦與提醒 (佔據左側大塊) */}
         <div className="md:col-span-4 space-y-4">
           <Card>
             <div className="border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
               <h2 className="font-semibold flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                财务待办与提醒
+                待辦與提醒
               </h2>
               <div className="flex gap-2 text-sm">
                 <button className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 font-medium text-zinc-900 dark:text-zinc-100">
-                  待审批 <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">{pendingPR}</span>
+                  待審批 <span className="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">{pendingPR}</span>
                 </button>
                 <button className="px-3 py-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                  草稿凭证 <span className="ml-1 rounded-full bg-zinc-500 px-1.5 py-0.5 text-[10px] text-white">{draftJe}</span>
+                  草稿憑證 <span className="ml-1 rounded-full bg-zinc-500 px-1.5 py-0.5 text-[10px] text-white">{draftJe}</span>
                 </button>
               </div>
             </div>
@@ -140,41 +141,41 @@ export default async function DashboardPage() {
               <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
                 {pendingPR > 0 && (
                   <TodoItem 
-                    title={`请款单审批：您有 ${pendingPR} 笔请款待审核`} 
-                    time="刚刚" 
-                    type="支出审批" 
+                    title={`請款單審批：您有 ${pendingPR} 筆請款待審核`} 
+                    time="剛剛" 
+                    type="支出審批" 
                     urgent 
                     href="/financial/payment-requests"
                   />
                 )}
                 {arOpen.length > 0 && (
                   <TodoItem 
-                    title={`应收账款提醒：有 ${arOpen.length} 笔应收账款待跟进`} 
+                    title={`應收賬款提醒：有 ${arOpen.length} 筆應收賬款待跟進`} 
                     time="今日" 
-                    type="应收账款" 
+                    type="應收賬款" 
                     urgent
                     href="/accounting/ar"
                   />
                 )}
                 {draftJe > 0 && (
                   <TodoItem 
-                    title={`草稿凭证待过账：${draftJe} 笔`} 
+                    title={`草稿憑證待過賬：${draftJe} 筆`} 
                     time="今日" 
-                    type="会计凭证" 
+                    type="會計憑證" 
                     href="/accounting/journals"
                   />
                 )}
                 {apOpen.length > 0 && (
                   <TodoItem 
-                    title={`账单支付：有 ${apOpen.length} 笔应付账款待处理`} 
+                    title={`賬單支付：有 ${apOpen.length} 筆應付賬款待處理`} 
                     time="今日" 
-                    type="应付账款" 
+                    type="應付賬款" 
                     href="/accounting/ap"
                   />
                 )}
                 {pendingPR === 0 && arOpen.length === 0 && draftJe === 0 && apOpen.length === 0 && (
                   <li className="p-8 text-center text-zinc-500 text-sm">
-                    目前没有待办事项，太棒了！
+                    目前沒有待辦事項，太棒了！
                   </li>
                 )}
               </ul>
@@ -182,33 +183,33 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* 4. 底部：预警与报表入口 (占据右侧小块) */}
+        {/* 4. 底部：預警與報表入口 (佔據右側小塊) */}
         <div className="md:col-span-3 space-y-4">
           <Card>
             <div className="border-b border-zinc-200 dark:border-zinc-800 p-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
-                预警区
+                預警區
               </h2>
             </div>
             <div className="p-4">
               <div className="space-y-4">
                 <div className="relative pl-4 border-l-2 border-red-500">
                   <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-red-500"></div>
-                  <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">预算超支预警</h4>
+                  <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">預算超支預警</h4>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                    <span className="text-red-600 dark:text-red-400 font-medium">行政部</span> 预算已超支 10%
+                    <span className="text-red-600 dark:text-red-400 font-medium">行政部</span> 預算已超支 10%
                   </p>
-                  <Link href="/financial/budget" className="text-xs text-blue-600 hover:underline mt-1 inline-block">查看详情 &rarr;</Link>
+                  <Link href="/financial/budget" className="text-xs text-blue-600 hover:underline mt-1 inline-block">查看詳情 &rarr;</Link>
                 </div>
                 
                 <div className="relative pl-4 border-l-2 border-orange-500">
                   <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-orange-500"></div>
-                  <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">现金流预警</h4>
+                  <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">現金流預警</h4>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                    现金流预计在 <span className="text-orange-600 dark:text-orange-400 font-medium">15 天后</span> 不足
+                    現金流預計在 <span className="text-orange-600 dark:text-orange-400 font-medium">15 天后</span> 不足
                   </p>
-                  <Link href="/financial/analysis-reports" className="text-xs text-blue-600 hover:underline mt-1 inline-block">查看报告 &rarr;</Link>
+                  <Link href="/financial/analysis-reports" className="text-xs text-blue-600 hover:underline mt-1 inline-block">查看報告 &rarr;</Link>
                 </div>
               </div>
             </div>
@@ -216,18 +217,18 @@ export default async function DashboardPage() {
 
           <Card>
             <div className="p-4">
-              <h2 className="font-semibold mb-3">核心财务报表</h2>
+              <h2 className="font-semibold mb-3">核心財務報表</h2>
               <div className="space-y-2">
                 <Link href="/accounting/reports/pl" className="flex items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors text-sm border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                  <span className="flex items-center gap-2"><Receipt className="h-4 w-4 text-blue-500" /> 利润和损失表 (P&L)</span>
+                  <span className="flex items-center gap-2"><Receipt className="h-4 w-4 text-blue-500" /> 利潤和損失表 (P&L)</span>
                   <ArrowRight className="h-4 w-4 text-zinc-400" />
                 </Link>
                 <Link href="/accounting/reports/bs" className="flex items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors text-sm border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                  <span className="flex items-center gap-2"><Landmark className="h-4 w-4 text-indigo-500" /> 企业资产负债表</span>
+                  <span className="flex items-center gap-2"><Landmark className="h-4 w-4 text-indigo-500" /> 企業資產負債表</span>
                   <ArrowRight className="h-4 w-4 text-zinc-400" />
                 </Link>
                 <Link href="/financial/budget" className="flex items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors text-sm border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                  <span className="flex items-center gap-2"><Wallet className="h-4 w-4 text-emerald-500" /> 月度预算执行报告</span>
+                  <span className="flex items-center gap-2"><Wallet className="h-4 w-4 text-emerald-500" /> 月度預算執行報告</span>
                   <ArrowRight className="h-4 w-4 text-zinc-400" />
                 </Link>
               </div>
@@ -239,7 +240,7 @@ export default async function DashboardPage() {
   );
 }
 
-// --- 辅助组件 ---
+// --- 輔助組件 ---
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -295,7 +296,7 @@ function TodoItem({ title, time, type, urgent = false, href }: { title: string; 
         </div>
       </div>
       <Link href={href} className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
-        去处理
+        去處理
       </Link>
     </li>
   );

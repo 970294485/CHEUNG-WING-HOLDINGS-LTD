@@ -595,6 +595,7 @@ export async function createPrepayment(formData: FormData): Promise<void> {
   const companyId = await getDefaultCompanyId();
   const amount = new Prisma.Decimal(String(formData.get("amount") ?? "0"));
   const payerName = String(formData.get("payerName") ?? "").trim() || null;
+  const customerId = String(formData.get("customerId") ?? "").trim() || null;
   const reference = String(formData.get("reference") ?? "").trim() || null;
   const linkedDocumentType = String(formData.get("linkedDocumentType") ?? "").trim() || null;
   const linkedDocumentId = String(formData.get("linkedDocumentId") ?? "").trim() || null;
@@ -605,6 +606,7 @@ export async function createPrepayment(formData: FormData): Promise<void> {
       companyId,
       amount,
       payerName,
+      customerId,
       reference,
       linkedDocumentType,
       linkedDocumentId,
@@ -618,6 +620,7 @@ export async function createPrepayment(formData: FormData): Promise<void> {
 export async function createReceivable(formData: FormData): Promise<void> {
   const companyId = await getDefaultCompanyId();
   const customerName = String(formData.get("customerName") ?? "").trim();
+  const customerId = String(formData.get("customerId") ?? "").trim() || null;
   const amount = new Prisma.Decimal(String(formData.get("amount") ?? "0"));
   const description = String(formData.get("description") ?? "").trim() || null;
   const invoiceNo = String(formData.get("invoiceNo") ?? "").trim() || null;
@@ -628,6 +631,7 @@ export async function createReceivable(formData: FormData): Promise<void> {
     data: {
       companyId,
       customerName,
+      customerId,
       description,
       amount,
       invoiceNo,
@@ -642,6 +646,7 @@ export async function createReceivable(formData: FormData): Promise<void> {
 export async function createPayable(formData: FormData): Promise<void> {
   const companyId = await getDefaultCompanyId();
   const vendorName = String(formData.get("vendorName") ?? "").trim();
+  const customerId = String(formData.get("customerId") ?? "").trim() || null;
   const amount = new Prisma.Decimal(String(formData.get("amount") ?? "0"));
   const description = String(formData.get("description") ?? "").trim() || null;
   const billNo = String(formData.get("billNo") ?? "").trim() || null;
@@ -652,6 +657,7 @@ export async function createPayable(formData: FormData): Promise<void> {
     data: {
       companyId,
       vendorName,
+      customerId,
       description,
       amount,
       billNo,
