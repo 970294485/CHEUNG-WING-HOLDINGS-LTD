@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: 获取采购单列表
+// GET: 獲取採購單列表
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: 创建采购单
+// POST: 創建採購單
 export async function POST(request: Request) {
   try {
     const body = await request.json();

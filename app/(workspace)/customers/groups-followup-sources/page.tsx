@@ -200,7 +200,7 @@ export default function GroupsFollowupSourcesPage() {
         fetchSources();
       } else {
         const data = await res.json();
-        alert(data.error || "保存失败");
+        alert(data.error || "保存失敗");
       }
     } catch (error) {
       console.error("Failed to save source:", error);
@@ -208,7 +208,7 @@ export default function GroupsFollowupSourcesPage() {
   };
 
   const handleSourceDelete = async (id: string) => {
-    if (!confirm("确定要删除此来源吗？")) return;
+    if (!confirm("確定要刪除此來源嗎？")) return;
     
     try {
       const res = await fetch(`/api/customer-sources/${id}`, {
@@ -249,7 +249,7 @@ export default function GroupsFollowupSourcesPage() {
     e.preventDefault();
 
     if (!editingFollowUp && !followUpFormData.customerId) {
-      alert("请选择客户");
+      alert("請選擇客戶");
       return;
     }
 
@@ -288,7 +288,7 @@ export default function GroupsFollowupSourcesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除此分组吗？")) return;
+    if (!confirm("確定要刪除此分組嗎？")) return;
     
     try {
       const res = await fetch(`/api/customer-groups/${id}`, {
@@ -303,7 +303,7 @@ export default function GroupsFollowupSourcesPage() {
   };
 
   const handleFollowUpDelete = async (id: string) => {
-    if (!confirm("确定要删除此跟进记录吗？")) return;
+    if (!confirm("確定要刪除此跟進記錄嗎？")) return;
     
     try {
       const res = await fetch(`/api/customer-follow-ups/${id}`, {
@@ -319,9 +319,9 @@ export default function GroupsFollowupSourcesPage() {
 
   const getFollowUpTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      EMAIL: "邮件",
-      PHONE: "电话",
-      MEETING: "会议",
+      EMAIL: "郵件",
+      PHONE: "電話",
+      MEETING: "會議",
       OTHER: "其他"
     };
     return types[type] || type;
@@ -330,36 +330,36 @@ export default function GroupsFollowupSourcesPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">分组 / 跟进 / 来源管理</h1>
+        <h1 className="text-2xl font-bold tracking-tight">分組 / 跟進 / 來源管理</h1>
         <p className="text-muted-foreground mt-2">
-          管理客户分组、查看跟进记录以及配置客户来源。
+          管理客戶分組、查看跟進記錄以及配置客戶來源。
         </p>
       </div>
 
       <Tabs defaultValue="groups" className="w-full">
         <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="groups">分组管理</TabsTrigger>
-          <TabsTrigger value="followups">跟进记录</TabsTrigger>
-          <TabsTrigger value="sources">客户来源</TabsTrigger>
+          <TabsTrigger value="groups">分組管理</TabsTrigger>
+          <TabsTrigger value="followups">跟進記錄</TabsTrigger>
+          <TabsTrigger value="sources">客戶來源</TabsTrigger>
         </TabsList>
 
         <TabsContent value="groups" className="mt-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium">客户分组列表</h2>
+            <h2 className="text-lg font-medium">客戶分組列表</h2>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog()}>
                   <Plus className="mr-2 h-4 w-4" />
-                  新建分组
+                  新建分組
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingGroup ? "编辑分组" : "新建分组"}</DialogTitle>
+                  <DialogTitle>{editingGroup ? "編輯分組" : "新建分組"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">分组名称 <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="name">分組名稱 <span className="text-red-500">*</span></Label>
                     <Input 
                       id="name" 
                       value={formData.name}
@@ -391,10 +391,10 @@ export default function GroupsFollowupSourcesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>分组名称</TableHead>
+                  <TableHead>分組名稱</TableHead>
                   <TableHead>描述</TableHead>
-                  <TableHead>客户数量</TableHead>
-                  <TableHead>创建时间</TableHead>
+                  <TableHead>客戶數量</TableHead>
+                  <TableHead>創建時間</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -402,13 +402,13 @@ export default function GroupsFollowupSourcesPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      加载中...
+                      加載中...
                     </TableCell>
                   </TableRow>
                 ) : groups.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      暂无分组数据
+                      暫無分組數據
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -445,28 +445,28 @@ export default function GroupsFollowupSourcesPage() {
 
         <TabsContent value="followups" className="mt-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium">跟进记录</h2>
+            <h2 className="text-lg font-medium">跟進記錄</h2>
             <Dialog open={isFollowUpDialogOpen} onOpenChange={setIsFollowUpDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenFollowUpDialog()}>
                   <Plus className="mr-2 h-4 w-4" />
-                  新建跟进记录
+                  新建跟進記錄
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingFollowUp ? "编辑跟进记录" : "新建跟进记录"}</DialogTitle>
+                  <DialogTitle>{editingFollowUp ? "編輯跟進記錄" : "新建跟進記錄"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleFollowUpSubmit} className="space-y-4 pt-4">
                   {!editingFollowUp && (
                     <div className="space-y-2">
-                      <Label htmlFor="customerId">客户 <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="customerId">客戶 <span className="text-red-500">*</span></Label>
                       <Select 
                         value={followUpFormData.customerId} 
                         onValueChange={(value) => setFollowUpFormData({ ...followUpFormData, customerId: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="选择客户" />
+                          <SelectValue placeholder="選擇客戶" />
                         </SelectTrigger>
                         <SelectContent>
                           {customers.map((customer) => (
@@ -479,24 +479,24 @@ export default function GroupsFollowupSourcesPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="type">跟进方式</Label>
+                    <Label htmlFor="type">跟進方式</Label>
                     <Select 
                       value={followUpFormData.type} 
                       onValueChange={(value) => setFollowUpFormData({ ...followUpFormData, type: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择跟进方式" />
+                        <SelectValue placeholder="選擇跟進方式" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PHONE">电话</SelectItem>
-                        <SelectItem value="EMAIL">邮件</SelectItem>
-                        <SelectItem value="MEETING">会议</SelectItem>
+                        <SelectItem value="PHONE">電話</SelectItem>
+                        <SelectItem value="EMAIL">郵件</SelectItem>
+                        <SelectItem value="MEETING">會議</SelectItem>
                         <SelectItem value="OTHER">其他</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="content">跟进内容 <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="content">跟進內容 <span className="text-red-500">*</span></Label>
                     <Textarea 
                       id="content" 
                       value={followUpFormData.content}
@@ -506,7 +506,7 @@ export default function GroupsFollowupSourcesPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">跟进时间 <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="date">跟進時間 <span className="text-red-500">*</span></Label>
                     <Input 
                       id="date" 
                       type="datetime-local"
@@ -530,10 +530,10 @@ export default function GroupsFollowupSourcesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>客户名称</TableHead>
-                  <TableHead>跟进方式</TableHead>
-                  <TableHead>跟进内容</TableHead>
-                  <TableHead>跟进时间</TableHead>
+                  <TableHead>客戶名稱</TableHead>
+                  <TableHead>跟進方式</TableHead>
+                  <TableHead>跟進內容</TableHead>
+                  <TableHead>跟進時間</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -541,13 +541,13 @@ export default function GroupsFollowupSourcesPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      加载中...
+                      加載中...
                     </TableCell>
                   </TableRow>
                 ) : followUps.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      暂无跟进记录
+                      暫無跟進記錄
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -586,27 +586,27 @@ export default function GroupsFollowupSourcesPage() {
 
         <TabsContent value="sources" className="mt-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium">客户来源列表</h2>
+            <h2 className="text-lg font-medium">客戶來源列表</h2>
             <Dialog open={isSourceDialogOpen} onOpenChange={setIsSourceDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenSourceDialog()}>
                   <Plus className="mr-2 h-4 w-4" />
-                  新建来源
+                  新建來源
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingSource ? "编辑来源" : "新建来源"}</DialogTitle>
+                  <DialogTitle>{editingSource ? "編輯來源" : "新建來源"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSourceSubmit} className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="source-name">来源名称 <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="source-name">來源名稱 <span className="text-red-500">*</span></Label>
                     <Input 
                       id="source-name" 
                       value={sourceFormData.name}
                       onChange={(e) => setSourceFormData({ ...sourceFormData, name: e.target.value })}
                       required 
-                      placeholder="例如: 展会、官网、推荐"
+                      placeholder="例如: 展會、官網、推薦"
                     />
                   </div>
                   <div className="space-y-2">
@@ -633,10 +633,10 @@ export default function GroupsFollowupSourcesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>来源名称</TableHead>
+                  <TableHead>來源名稱</TableHead>
                   <TableHead>描述</TableHead>
-                  <TableHead>客户数量</TableHead>
-                  <TableHead>创建时间</TableHead>
+                  <TableHead>客戶數量</TableHead>
+                  <TableHead>創建時間</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -644,13 +644,13 @@ export default function GroupsFollowupSourcesPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      加载中...
+                      加載中...
                     </TableCell>
                   </TableRow>
                 ) : sources.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      暂无来源数据
+                      暫無來源數據
                     </TableCell>
                   </TableRow>
                 ) : (

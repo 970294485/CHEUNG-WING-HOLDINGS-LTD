@@ -14,7 +14,7 @@ function sub(a: Prisma.Decimal, b: Prisma.Decimal): Prisma.Decimal {
   return a.sub(b);
 }
 
-/** 按科目类型计算余额：借方科目 balance = 借-贷；贷方科目 balance = 贷-借 */
+/** 按科目類型計算餘額：借方科目 balance = 借-貸；貸方科目 balance = 貸-借 */
 export function lineBalanceForType(
   type: GlAccountType,
   debit: Prisma.Decimal,

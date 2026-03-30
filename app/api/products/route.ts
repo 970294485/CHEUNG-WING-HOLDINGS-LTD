@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: 获取产品列表
+// GET: 獲取產品列表
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: 创建产品
+// POST: 創建產品
 export async function POST(request: Request) {
   try {
     const body = await request.json();

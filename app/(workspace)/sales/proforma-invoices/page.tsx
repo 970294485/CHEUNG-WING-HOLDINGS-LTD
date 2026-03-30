@@ -27,7 +27,7 @@ export default function ProformaInvoicesPage() {
         setDocuments(data);
       }
     } catch (error) {
-      console.error("获取预收发票失败:", error);
+      console.error("獲取預收發票失敗:", error);
     } finally {
       setLoading(false);
     }
@@ -46,27 +46,27 @@ export default function ProformaInvoicesPage() {
         exportDocumentToPDF(data, "Proforma Invoice");
       }
     } catch (error) {
-      console.error("导出 PDF 失败:", error);
-      alert("导出失败");
+      console.error("導出 PDF 失敗:", error);
+      alert("導出失敗");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除此预收发票吗？此操作不可恢复。")) return;
+    if (!confirm("確定要刪除此預收發票嗎？此操作不可恢復。")) return;
     
     try {
       const res = await fetch(`/api/sales-documents/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        alert("删除成功");
+        alert("刪除成功");
         fetchDocuments();
       } else {
         const err = await res.json();
-        alert(`删除失败: ${err.error}`);
+        alert(`刪除失敗: ${err.error}`);
       }
     } catch (error) {
-      alert("删除失败");
+      alert("刪除失敗");
     }
   };
 
@@ -75,9 +75,9 @@ export default function ProformaInvoicesPage() {
       case "DRAFT":
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">草稿</span>;
       case "PENDING":
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">待处理</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">待處理</span>;
       case "CONFIRMED":
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">已确认</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">已確認</span>;
       case "CANCELLED":
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">已取消</span>;
       case "COMPLETED":
@@ -91,12 +91,12 @@ export default function ProformaInvoicesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">预收发票管理</h1>
-          <p className="text-sm text-zinc-500 mt-1">管理基于销售合同生成的预收发票。</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">預收發票管理</h1>
+          <p className="text-sm text-zinc-500 mt-1">管理基於銷售合同生成的預收發票。</p>
         </div>
         <Button onClick={() => router.push("/sales/proforma-invoices/new")}>
           <Plus className="mr-2 h-4 w-4" />
-          新增预收发票
+          新增預收發票
         </Button>
       </div>
 
@@ -104,22 +104,22 @@ export default function ProformaInvoicesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>单号</TableHead>
-              <TableHead>客户</TableHead>
+              <TableHead>單號</TableHead>
+              <TableHead>客戶</TableHead>
               <TableHead>日期</TableHead>
-              <TableHead>总金额</TableHead>
-              <TableHead>状态</TableHead>
+              <TableHead>總金額</TableHead>
+              <TableHead>狀態</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">加载中...</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">加載中...</TableCell>
               </TableRow>
             ) : documents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">暂无预收发票数据</TableCell>
+                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">暫無預收發票數據</TableCell>
               </TableRow>
             ) : (
               documents.map((doc) => (
@@ -137,7 +137,7 @@ export default function ProformaInvoicesPage() {
                         onClick={() => handleExportPDF(doc.id)}
                       >
                         <FileDown className="mr-1 h-3 w-3" />
-                        导出 PDF
+                        導出 PDF
                       </Button>
                       <Button
                         variant="ghost"
@@ -145,7 +145,7 @@ export default function ProformaInvoicesPage() {
                         onClick={() => router.push(`/sales/proforma-invoices/${doc.id}`)}
                       >
                         <FileText className="mr-1 h-3 w-3" />
-                        详情
+                        詳情
                       </Button>
                       <Button
                         variant="ghost"
@@ -153,7 +153,7 @@ export default function ProformaInvoicesPage() {
                         onClick={() => router.push(`/sales/proforma-invoices/${doc.id}/edit`)}
                       >
                         <Edit className="mr-1 h-3 w-3" />
-                        编辑
+                        編輯
                       </Button>
                       <Button
                         variant="ghost"
@@ -162,7 +162,7 @@ export default function ProformaInvoicesPage() {
                         onClick={() => handleDelete(doc.id)}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
-                        删除
+                        刪除
                       </Button>
                     </div>
                   </TableCell>

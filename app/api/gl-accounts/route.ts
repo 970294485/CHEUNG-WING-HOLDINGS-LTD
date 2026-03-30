@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET: 获取会计科目列表
+// GET: 獲取會計科目列表
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: 创建会计科目
+// POST: 創建會計科目
 export async function POST(request: Request) {
   try {
     const body = await request.json();

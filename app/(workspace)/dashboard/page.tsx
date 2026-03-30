@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       {/* 1. 頂部：歡迎區與快捷操作 */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">企業工作台</h1>
+          <h1 className="text-2xl font-bold tracking-tight">企業工作臺</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             早上好，{userName}！今天是 {today}。
             <span className="ml-2 text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md">

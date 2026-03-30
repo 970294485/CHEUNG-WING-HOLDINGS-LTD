@@ -294,7 +294,7 @@ export async function createInitialInventory(formData: FormData): Promise<void> 
 
   if (!productId || isNaN(quantity) || quantity <= 0) return;
 
-  // 1. 增加库存台账
+  // 1. 增加庫存臺賬
   await prisma.inventoryBalance.upsert({
     where: {
       companyId_productId_warehouseId: {
@@ -314,7 +314,7 @@ export async function createInitialInventory(formData: FormData): Promise<void> 
     },
   });
 
-  // 2. 记录交易流水 (期初录入)
+  // 2. 記錄交易流水 (期初錄入)
   await prisma.inventoryTransaction.create({
     data: {
       companyId,
@@ -571,7 +571,7 @@ export async function setPaymentRequestStatus(
     where: { id },
     data: {
       status,
-      approvedBy: approvedBy ?? "审批人",
+      approvedBy: approvedBy ?? "審批人",
       approvedAt:
         status === "APPROVED" || status === "REJECTED" || status === "PAID" ? new Date() : null,
     },
@@ -586,7 +586,7 @@ export async function paymentRequestDecisionForm(formData: FormData): Promise<vo
     | "APPROVED"
     | "REJECTED"
     | "PAID";
-  const by = String(formData.get("by") ?? "").trim() || "财务审批";
+  const by = String(formData.get("by") ?? "").trim() || "財務審批";
   if (!id || !["APPROVED", "REJECTED", "PAID"].includes(decision)) return;
   await setPaymentRequestStatus(id, decision, by);
 }

@@ -27,7 +27,7 @@ export default function ContractsPage() {
         setDocuments(data);
       }
     } catch (error) {
-      console.error("获取合同失败:", error);
+      console.error("獲取合同失敗:", error);
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,15 @@ export default function ContractsPage() {
         body: JSON.stringify({ targetType: "PROFORMA_INVOICE" }),
       });
       if (res.ok) {
-        alert("已成功生成预收发票！");
+        alert("已成功生成預收發票！");
         fetchDocuments();
         router.push("/sales/proforma-invoices");
       } else {
         const err = await res.json();
-        alert(`生成失败: ${err.error}`);
+        alert(`生成失敗: ${err.error}`);
       }
     } catch (error) {
-      alert("生成失败");
+      alert("生成失敗");
     }
   };
 
@@ -66,8 +66,8 @@ export default function ContractsPage() {
         exportDocumentToPDF(data, "Contract");
       }
     } catch (error) {
-      console.error("导出 PDF 失败:", error);
-      alert("导出失败");
+      console.error("導出 PDF 失敗:", error);
+      alert("導出失敗");
     }
   };
 

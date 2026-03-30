@@ -179,7 +179,7 @@ export function TypesAttributesClient({ products }: { products: Product[] }) {
                     <label className="text-xs text-zinc-500">類型 (Category)</label>
                     <input
                       type="text"
-                      placeholder="例如: 家具"
+                      placeholder="例如: 傢俱"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"

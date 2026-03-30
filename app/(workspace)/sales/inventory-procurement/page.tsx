@@ -28,7 +28,7 @@ export default async function InventoryPage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">庫存與採購對接</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          管理庫存出入庫操作，查看實時庫存台賬及交易記錄。
+          管理庫存出入庫操作，查看實時庫存臺賬及交易記錄。
         </p>
       </div>
 
@@ -96,7 +96,7 @@ export default async function InventoryPage() {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium tracking-tight">實時庫存台賬</h3>
+          <h3 className="text-lg font-medium tracking-tight">實時庫存臺賬</h3>
           <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">

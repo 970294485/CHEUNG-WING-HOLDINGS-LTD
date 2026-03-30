@@ -18,9 +18,9 @@ async function main() {
   });
 
   const catDefs = [
-    { code: "GEN", name: "一般", description: "一般业务" },
-    { code: "SAL", name: "销售", description: "销售相关" },
-    { code: "ADM", name: "行政", description: "行政费用" },
+    { code: "GEN", name: "一般", description: "一般業務" },
+    { code: "SAL", name: "銷售", description: "銷售相關" },
+    { code: "ADM", name: "行政", description: "行政費用" },
   ];
   for (const c of catDefs) {
     await prisma.accountingCategory.upsert({
@@ -31,14 +31,14 @@ async function main() {
   }
 
   const accounts: { code: string; name: string; type: GlAccountType; sortOrder: number }[] = [
-    { code: "1000", name: "库存现金", type: "ASSET", sortOrder: 10 },
-    { code: "1100", name: "银行存款", type: "ASSET", sortOrder: 20 },
-    { code: "1200", name: "应收账款", type: "ASSET", sortOrder: 30 },
-    { code: "2000", name: "应付账款", type: "LIABILITY", sortOrder: 40 },
-    { code: "3000", name: "实收资本", type: "EQUITY", sortOrder: 50 },
-    { code: "4000", name: "营业收入", type: "REVENUE", sortOrder: 60 },
-    { code: "5000", name: "营业成本", type: "EXPENSE", sortOrder: 70 },
-    { code: "5100", name: "管理费用", type: "EXPENSE", sortOrder: 80 },
+    { code: "1000", name: "庫存現金", type: "ASSET", sortOrder: 10 },
+    { code: "1100", name: "銀行存款", type: "ASSET", sortOrder: 20 },
+    { code: "1200", name: "應收賬款", type: "ASSET", sortOrder: 30 },
+    { code: "2000", name: "應付賬款", type: "LIABILITY", sortOrder: 40 },
+    { code: "3000", name: "實收資本", type: "EQUITY", sortOrder: 50 },
+    { code: "4000", name: "營業收入", type: "REVENUE", sortOrder: 60 },
+    { code: "5000", name: "營業成本", type: "EXPENSE", sortOrder: 70 },
+    { code: "5100", name: "管理費用", type: "EXPENSE", sortOrder: 80 },
   ];
 
   const glByCode: Record<string, string> = {};
@@ -71,7 +71,7 @@ async function main() {
       companyId: company.id,
       entryNo: `JE-${y}${mm}-001`,
       entryDate: d1,
-      description: "确认收入（演示）",
+      description: "確認收入（演示）",
       status: JournalEntryStatus.POSTED,
       lines: {
         create: [
@@ -79,14 +79,14 @@ async function main() {
             glAccountId: glByCode["1100"]!,
             debit: 50000,
             credit: 0,
-            memo: "银行收款",
+            memo: "銀行收款",
             accountingCategoryId: genCat.id,
           },
           {
             glAccountId: glByCode["4000"]!,
             debit: 0,
             credit: 50000,
-            memo: "营业收入",
+            memo: "營業收入",
             accountingCategoryId: genCat.id,
           },
         ],
@@ -99,7 +99,7 @@ async function main() {
       companyId: company.id,
       entryNo: `JE-${y}${mm}-002`,
       entryDate: d2,
-      description: "支付费用（演示）",
+      description: "支付費用（演示）",
       status: JournalEntryStatus.POSTED,
       lines: {
         create: [
@@ -107,14 +107,14 @@ async function main() {
             glAccountId: glByCode["5100"]!,
             debit: 8000,
             credit: 0,
-            memo: "管理费用",
+            memo: "管理費用",
             accountingCategoryId: genCat.id,
           },
           {
             glAccountId: glByCode["1100"]!,
             debit: 0,
             credit: 8000,
-            memo: "银行付款",
+            memo: "銀行付款",
             accountingCategoryId: genCat.id,
           },
         ],
@@ -139,7 +139,7 @@ async function main() {
       glAccountId: glByCode["4000"]!,
       amount: 60000,
       budgetType: BudgetType.REVENUE,
-      note: "月度收入预算",
+      note: "月度收入預算",
     },
     update: { amount: 60000 },
   });
@@ -161,22 +161,22 @@ async function main() {
       glAccountId: glByCode["5100"]!,
       amount: 10000,
       budgetType: BudgetType.EXPENSE,
-      note: "月度费用预算",
+      note: "月度費用預算",
     },
     update: { amount: 10000 },
   });
 
   await prisma.paymentRequest.deleteMany({
-    where: { companyId: company.id, title: "办公用品采购请款（演示）" },
+    where: { companyId: company.id, title: "辦公用品採購請款（演示）" },
   });
   await prisma.paymentRequest.create({
     data: {
       companyId: company.id,
-      title: "办公用品采购请款（演示）",
+      title: "辦公用品採購請款（演示）",
       amount: 3200,
-      purpose: "采购打印耗材",
+      purpose: "採購打印耗材",
       status: PaymentRequestStatus.SUBMITTED,
-      requestedBy: "演示用户",
+      requestedBy: "演示用戶",
       approverRole: "finance_manager",
     },
   });
@@ -188,7 +188,7 @@ async function main() {
     data: {
       companyId: company.id,
       amount: 10000,
-      payerName: "演示客户 A",
+      payerName: "演示客戶 A",
       reference: "DEMO-PREP-1",
       linkedDocumentType: "CONTRACT",
       linkedDocumentId: "CTR-DEMO-001",
@@ -201,8 +201,8 @@ async function main() {
   await prisma.accountsReceivable.create({
     data: {
       companyId: company.id,
-      customerName: "演示客户 B",
-      description: "项目尾款",
+      customerName: "演示客戶 B",
+      description: "項目尾款",
       amount: 12000,
       receivedAmount: 0,
       invoiceNo: "INV-DEMO-001",
@@ -217,8 +217,8 @@ async function main() {
   await prisma.accountsPayable.create({
     data: {
       companyId: company.id,
-      vendorName: "演示供应商",
-      description: "物料采购",
+      vendorName: "演示供應商",
+      description: "物料採購",
       amount: 15000,
       paidAmount: 5000,
       billNo: "BILL-DEMO-001",
@@ -233,9 +233,9 @@ async function main() {
     create: {
       email: "demo@tvp.local",
       passwordHash,
-      name: "演示用户",
+      name: "演示用戶",
     },
-    update: { passwordHash, name: "演示用户" },
+    update: { passwordHash, name: "演示用戶" },
   });
 
   // --- RBAC Seed ---
@@ -244,9 +244,9 @@ async function main() {
     create: {
       companyId: company.id,
       name: "Admin",
-      description: "系统管理员",
+      description: "系統管理員",
     },
-    update: { description: "系统管理员" },
+    update: { description: "系統管理員" },
   });
 
   const financeRole = await prisma.role.upsert({
@@ -254,9 +254,9 @@ async function main() {
     create: {
       companyId: company.id,
       name: "Finance",
-      description: "财务人员",
+      description: "財務人員",
     },
-    update: { description: "财务人员" },
+    update: { description: "財務人員" },
   });
 
   const salesRole = await prisma.role.upsert({
@@ -264,9 +264,9 @@ async function main() {
     create: {
       companyId: company.id,
       name: "Sales",
-      description: "销售人员",
+      description: "銷售人員",
     },
-    update: { description: "销售人员" },
+    update: { description: "銷售人員" },
   });
 
   const warehouseRole = await prisma.role.upsert({
@@ -274,9 +274,9 @@ async function main() {
     create: {
       companyId: company.id,
       name: "Warehouse",
-      description: "仓库管理员",
+      description: "倉庫管理員",
     },
-    update: { description: "仓库管理员" },
+    update: { description: "倉庫管理員" },
   });
 
   const staffRole = await prisma.role.upsert({
@@ -284,21 +284,21 @@ async function main() {
     create: {
       companyId: company.id,
       name: "Staff",
-      description: "普通员工",
+      description: "普通員工",
     },
-    update: { description: "普通员工" },
+    update: { description: "普通員工" },
   });
 
   const allPerm = await prisma.permission.upsert({
     where: { action_resource: { action: "manage", resource: "all" } },
-    create: { action: "manage", resource: "all", description: "所有权限" },
-    update: { description: "所有权限" },
+    create: { action: "manage", resource: "all", description: "所有權限" },
+    update: { description: "所有權限" },
   });
 
   const readPerm = await prisma.permission.upsert({
     where: { action_resource: { action: "read", resource: "all" } },
-    create: { action: "read", resource: "all", description: "只读权限" },
-    update: { description: "只读权限" },
+    create: { action: "read", resource: "all", description: "只讀權限" },
+    update: { description: "只讀權限" },
   });
 
   await prisma.rolePermission.upsert({
@@ -326,12 +326,12 @@ async function main() {
     create: {
       companyId: company.id,
       sku: "PROD-001",
-      name: "演示产品 A",
-      description: "用于演示的高级产品",
+      name: "演示產品 A",
+      description: "用於演示的高級產品",
       price: 199.99,
       cost: 100.00,
     },
-    update: { name: "演示产品 A", price: 199.99, cost: 100.00 },
+    update: { name: "演示產品 A", price: 199.99, cost: 100.00 },
   });
 
   const product2 = await prisma.product.upsert({
@@ -339,12 +339,12 @@ async function main() {
     create: {
       companyId: company.id,
       sku: "PROD-002",
-      name: "演示产品 B",
-      description: "用于演示的基础产品",
+      name: "演示產品 B",
+      description: "用於演示的基礎產品",
       price: 49.99,
       cost: 20.00,
     },
-    update: { name: "演示产品 B", price: 49.99, cost: 20.00 },
+    update: { name: "演示產品 B", price: 49.99, cost: 20.00 },
   });
 
   await prisma.inventoryBalance.upsert({
@@ -372,13 +372,13 @@ async function main() {
 
   // --- Customers & Sales ---
   const customerGroup = await prisma.customerGroup.upsert({
-    where: { companyId_name: { companyId: company.id, name: "VIP客户" } },
+    where: { companyId_name: { companyId: company.id, name: "VIP客戶" } },
     create: {
       companyId: company.id,
-      name: "VIP客户",
-      description: "重要客户群体",
+      name: "VIP客戶",
+      description: "重要客戶群體",
     },
-    update: { description: "重要客户群体" },
+    update: { description: "重要客戶群體" },
   });
 
   const customer1 = await prisma.customer.upsert({
@@ -387,20 +387,20 @@ async function main() {
       companyId: company.id,
       code: "CUST-001",
       name: "演示科技有限公司",
-      contactPerson: "张总",
+      contactPerson: "張總",
       email: "zhang@example.com",
       phone: "13800138000",
       groupId: customerGroup.id,
       status: "ACTIVE",
     },
-    update: { name: "演示科技有限公司", contactPerson: "张总" },
+    update: { name: "演示科技有限公司", contactPerson: "張總" },
   });
 
   await prisma.customerFollowUp.create({
     data: {
       customerId: customer1.id,
       type: "MEETING",
-      content: "初次拜访，客户对产品A很感兴趣，计划下周出报价单。",
+      content: "初次拜訪，客戶對產品A很感興趣，計劃下週出報價單。",
       createdBy: demoUser.id,
     }
   });

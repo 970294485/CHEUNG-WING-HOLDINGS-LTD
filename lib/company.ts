@@ -5,7 +5,7 @@ export async function getDefaultCompanyId(): Promise<string> {
     orderBy: { createdAt: "asc" },
   });
   if (!company) {
-    throw new Error("尚未初始化公司数据，请运行: npx prisma db push && npx prisma db seed");
+    throw new Error("尚未初始化公司數據，請運行: npx prisma db push && npx prisma db seed");
   }
   return company.id;
 }
