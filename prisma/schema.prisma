@@ -2,11 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Neon：迁移 / db push 走 directUrl（直连）；运行时可用 Pooler 的 DATABASE_URL。只有一条直连串时两变量可相同。
+// PostgreSQL：Vercel / 一般部署只需 DATABASE_URL。
+// 若使用 Neon「Pooler + 直連」分離：在 prisma 目錄用 prisma.config 或維護分支自行加回 directUrl = env("DIRECT_URL")，並在平台同時設定兩個變數。
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
