@@ -54,7 +54,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       taxId: body.taxId,
       source: body.source,
       status: body.status,
-      groupId: body.groupId || null,
+      group: body.groupId
+        ? { connect: { id: String(body.groupId) } }
+        : { disconnect: true },
     };
 
     const customer = await prisma.customer.update({
