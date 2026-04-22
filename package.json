@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && prisma db seed && next build",
+    "build": "node scripts/prisma-generate.cjs && next build",
     "start": "next start",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
@@ -17,7 +17,7 @@
     "db:sync:journals": "npx tsx scripts/reconcile-accounting-journals.ts",
     "db:sync:system": "npx tsx scripts/sync-system-from-demo.ts",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/prisma-generate.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
