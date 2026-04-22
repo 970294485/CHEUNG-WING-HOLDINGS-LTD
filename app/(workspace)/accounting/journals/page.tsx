@@ -1,16 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
+import { JOURNAL_SOURCE_PAYMENT_REQUEST } from "@/lib/finance/sync-payment-request-journal";
+import { cn } from "@/lib/utils";
 
 export default async function JournalsPage() {
   const companyId = await getDefaultCompanyId();
-  const entries = await prisma.journalEntry.findMany({
+  let entries = await prisma.journalEntry.findMany({
     where: { companyId },
     orderBy: [{ entryDate: "desc" }, { entryNo: "desc" }],
     include: {
       lines: { include: { glAccount: { select: { code: true, name: true } } } },
     },
-    take: 80,
+    take: 100,
+  });
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { name: true, code: true },
   });
 
   return (
@@ -18,7 +25,10 @@ export default async function JournalsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">會計憑證</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">草稿可刪除；過帳後參與總帳與報表。</p>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
+            列表僅顯示<strong className="font-medium text-zinc-800 dark:text-zinc-200">實際入帳</strong>
+            ：手動建立之草稿／已過帳憑證，以及請款單標記「已支付」時自動產生之已過帳憑證。不寫入固定演示分錄。
+          </p>
         </div>
         <Link
           href="/accounting/journals/new"
@@ -28,6 +38,26 @@ export default async function JournalsPage() {
         </Link>
       </div>
       <div className="space-y-4">
+        {entries.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              目前工作公司「{company?.name ?? "—"}（{company?.code ?? "—"}）」尚無會計憑證。
+            </p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
+              <li>
+                可點右上角<strong className="font-medium text-zinc-800 dark:text-zinc-200">新建憑證</strong>
+                手動入帳；請款單改為「已支付」後也會自動產生憑證。
+              </li>
+              <li>
+                若曾刪除演示資料，請在專案目錄執行{" "}
+                <code className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+                  npm run db:seed
+                </code>{" "}
+                還原完整演示庫（含 DEMO 用戶與客戶等）。
+              </li>
+            </ul>
+          </div>
+        ) : null}
         {entries.map((e) => {
           const href = "/accounting/journals/" + e.id;
           const posted = e.status === "POSTED";
@@ -48,6 +78,17 @@ export default async function JournalsPage() {
                   {e.entryDate.toLocaleDateString("zh-CN")}
                 </span>
                 <span className={badge}>{label}</span>
+                {e.sourceType === JOURNAL_SOURCE_PAYMENT_REQUEST && e.sourceId ? (
+                  <Link
+                    href="/financial/payment-requests"
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs font-medium",
+                      "bg-violet-100 text-violet-900 hover:underline dark:bg-violet-950/50 dark:text-violet-200",
+                    )}
+                  >
+                    來源：請款單
+                  </Link>
+                ) : null}
               </div>
               {e.description ? (
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{e.description}</p>

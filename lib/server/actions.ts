@@ -4,21 +4,8 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
-
-async function nextJournalEntryNo(companyId: string) {
-  const now = new Date();
-  const prefix = `JE-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const last = await prisma.journalEntry.findFirst({
-    where: { companyId, entryNo: { startsWith: prefix } },
-    orderBy: { entryNo: "desc" },
-  });
-  let seq = 1;
-  if (last?.entryNo) {
-    const part = last.entryNo.split("-").pop();
-    seq = (Number.parseInt(part ?? "0", 10) || 0) + 1;
-  }
-  return `${prefix}-${String(seq).padStart(3, "0")}`;
-}
+import { nextJournalEntryNo } from "@/lib/finance/journal-entry-no";
+import { syncPaidPaymentRequestToJournal } from "@/lib/finance/sync-payment-request-journal";
 
 export async function deleteProduct(id: string): Promise<void> {
   const companyId = await getDefaultCompanyId();
@@ -228,6 +215,141 @@ export async function createInventoryTransaction(formData: FormData): Promise<vo
   });
 
   revalidatePath("/data-entry/warehouse-stock");
+  revalidatePath("/sales/inventory-procurement");
+  revalidatePath("/inventory/transactions");
+  revalidatePath("/inventory/details");
+}
+
+/** 採購明細收貨入庫（依採購單明細關聯庫存流水） */
+export async function receivePurchaseOrderLine(formData: FormData): Promise<void> {
+  const companyId = await getDefaultCompanyId();
+  const purchaseOrderItemId = String(formData.get("purchaseOrderItemId") ?? "").trim();
+  const quantity = Number.parseInt(String(formData.get("quantity") ?? "0"), 10);
+  const unitCost = new Prisma.Decimal(String(formData.get("unitCost") ?? "0"));
+
+  if (!purchaseOrderItemId || !Number.isFinite(quantity) || quantity <= 0) return;
+
+  const line = await prisma.purchaseOrderItem.findFirst({
+    where: { id: purchaseOrderItemId, purchaseOrder: { companyId } },
+    include: { purchaseOrder: true },
+  });
+  if (!line || line.purchaseOrder.status === "CANCELLED") return;
+
+  const receivedAgg = await prisma.inventoryTransaction.aggregate({
+    where: {
+      companyId,
+      productId: line.productId,
+      type: "IN",
+      referenceType: "PO_RECEIVE",
+      referenceId: purchaseOrderItemId,
+    },
+    _sum: { quantity: true },
+  });
+  const received = receivedAgg._sum.quantity ?? 0;
+  const remaining = line.quantity - received;
+  if (quantity > remaining) return;
+
+  await prisma.inventoryTransaction.create({
+    data: {
+      companyId,
+      productId: line.productId,
+      type: "IN",
+      quantity,
+      unitCost,
+      referenceType: "PO_RECEIVE",
+      referenceId: purchaseOrderItemId,
+    },
+  });
+
+  await prisma.inventoryBalance.upsert({
+    where: {
+      companyId_productId_warehouseId: {
+        companyId,
+        productId: line.productId,
+        warehouseId: "",
+      },
+    },
+    create: {
+      companyId,
+      productId: line.productId,
+      warehouseId: "",
+      quantity,
+    },
+    update: {
+      quantity: { increment: quantity },
+    },
+  });
+
+  revalidatePath("/sales/inventory-procurement");
+  revalidatePath("/data-entry/warehouse-stock");
+  revalidatePath("/inventory/details");
+  revalidatePath("/inventory/transactions");
+}
+
+/** 銷售明細出庫（依銷售單據明細關聯庫存流水） */
+export async function issueSalesDocumentLine(formData: FormData): Promise<void> {
+  const companyId = await getDefaultCompanyId();
+  const salesDocumentItemId = String(formData.get("salesDocumentItemId") ?? "").trim();
+  const quantity = Number.parseInt(String(formData.get("quantity") ?? "0"), 10);
+  const unitCost = new Prisma.Decimal(String(formData.get("unitCost") ?? "0"));
+
+  if (!salesDocumentItemId || !Number.isFinite(quantity) || quantity <= 0) return;
+
+  const line = await prisma.salesDocumentItem.findFirst({
+    where: { id: salesDocumentItemId, salesDocument: { companyId } },
+    include: { salesDocument: true },
+  });
+  if (!line || line.salesDocument.status === "CANCELLED") return;
+
+  const shippedAgg = await prisma.inventoryTransaction.aggregate({
+    where: {
+      companyId,
+      productId: line.productId,
+      type: "OUT",
+      referenceType: "SO_SHIP",
+      referenceId: salesDocumentItemId,
+    },
+    _sum: { quantity: true },
+  });
+  const shipped = shippedAgg._sum.quantity ?? 0;
+  const remaining = line.quantity - shipped;
+  if (quantity > remaining) return;
+
+  await prisma.inventoryTransaction.create({
+    data: {
+      companyId,
+      productId: line.productId,
+      type: "OUT",
+      quantity,
+      unitCost,
+      referenceType: "SO_SHIP",
+      referenceId: salesDocumentItemId,
+    },
+  });
+
+  await prisma.inventoryBalance.upsert({
+    where: {
+      companyId_productId_warehouseId: {
+        companyId,
+        productId: line.productId,
+        warehouseId: "",
+      },
+    },
+    create: {
+      companyId,
+      productId: line.productId,
+      warehouseId: "",
+      quantity: -quantity,
+    },
+    update: {
+      quantity: { increment: -quantity },
+    },
+  });
+
+  revalidatePath("/sales/inventory-procurement");
+  revalidatePath("/data-entry/warehouse-stock");
+  revalidatePath("/inventory/details");
+  revalidatePath("/inventory/transactions");
 }
 
 export async function updateCompanyProfile(formData: FormData): Promise<void> {
@@ -261,6 +383,20 @@ export async function createDocumentNumberRule(formData: FormData): Promise<void
     create: { companyId, documentType, prefix, dateFormat, sequenceLen },
     update: { prefix, dateFormat, sequenceLen },
   });
+  revalidatePath("/data-entry/document-numbers");
+}
+
+export async function deleteDocumentNumberRule(formData: FormData): Promise<void> {
+  const companyId = await getDefaultCompanyId();
+  const ruleId = String(formData.get("ruleId") ?? "").trim();
+  if (!ruleId) return;
+
+  const rule = await prisma.documentNumberRule.findFirst({
+    where: { id: ruleId, companyId },
+  });
+  if (!rule) return;
+
+  await prisma.documentNumberRule.delete({ where: { id: ruleId } });
   revalidatePath("/data-entry/document-numbers");
 }
 
@@ -556,6 +692,7 @@ export async function createPaymentRequest(formData: FormData): Promise<void> {
     },
   });
   revalidatePath("/financial/payment-requests");
+  revalidatePath("/accounting/ap");
   revalidatePath("/dashboard");
 }
 
@@ -576,7 +713,20 @@ export async function setPaymentRequestStatus(
         status === "APPROVED" || status === "REJECTED" || status === "PAID" ? new Date() : null,
     },
   });
+
+  if (status === "PAID") {
+    const sync = await syncPaidPaymentRequestToJournal(prisma, companyId, id);
+    if (sync.ok && sync.created) {
+      revalidatePath("/accounting/journals");
+      revalidatePath("/accounting/reports/pl");
+      revalidatePath("/accounting/reports/bs");
+      revalidatePath("/accounting/reports/trial-balance");
+      revalidatePath("/accounting/ledger");
+    }
+  }
+
   revalidatePath("/financial/payment-requests");
+  revalidatePath("/accounting/ap");
   revalidatePath("/dashboard");
 }
 
@@ -614,6 +764,8 @@ export async function createPrepayment(formData: FormData): Promise<void> {
     },
   });
   revalidatePath("/financial/prepayments");
+  revalidatePath("/financial/contract-invoice-prepay");
+  revalidatePath("/accounting/ar");
   revalidatePath("/dashboard");
 }
 
@@ -640,6 +792,8 @@ export async function createReceivable(formData: FormData): Promise<void> {
     },
   });
   revalidatePath("/accounting/ar");
+  revalidatePath("/financial/prepayments");
+  revalidatePath("/financial/contract-invoice-prepay");
   revalidatePath("/dashboard");
 }
 

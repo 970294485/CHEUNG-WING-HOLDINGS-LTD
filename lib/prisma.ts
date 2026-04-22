@@ -1,39 +1,49 @@
+import { loadEnvConfig } from "@next/env";
 import { PrismaClient } from "@prisma/client";
-import path from "path";
-import fs from "fs";
+
+loadEnvConfig(process.cwd());
+
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (value == null) return undefined;
+  const t = value.replace(/^\uFEFF/, "").trim();
+  return t.length ? t : undefined;
+}
+
+function requirePostgresUrl(envKey: "DATABASE_URL" | "DIRECT_URL"): string {
+  const raw = normalizeEnvValue(process.env[envKey]);
+  if (
+    raw &&
+    (raw.startsWith("postgresql://") || raw.startsWith("postgres://"))
+  ) {
+    return raw;
+  }
+  throw new Error(
+    `${envKey} 未設置或不是有效的 PostgreSQL 連線字串（需以 postgresql:// 或 postgres:// 開頭）。請在專案根目錄 .env 中配置 Neon 等連線。`,
+  );
+}
+
+const databaseUrl = requirePostgresUrl("DATABASE_URL");
+process.env.DATABASE_URL = databaseUrl;
+
+let directUrl = normalizeEnvValue(process.env.DIRECT_URL);
+if (
+  !directUrl ||
+  (!directUrl.startsWith("postgresql://") && !directUrl.startsWith("postgres://"))
+) {
+  directUrl = databaseUrl;
+}
+process.env.DIRECT_URL = directUrl;
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-let dbUrl = "file:./dev.db";
-
-if (process.env.NODE_ENV === "production") {
-  // In Vercel, the file system is read-only except for /tmp.
-  // We need to copy the SQLite DB to /tmp to allow Prisma to read/write.
-  const sourcePath = path.join(process.cwd(), "prisma", "dev.db");
-  const destPath = path.join("/tmp", "dev.db");
-  
-  try {
-    if (!fs.existsSync(destPath) && fs.existsSync(sourcePath)) {
-      fs.copyFileSync(sourcePath, destPath);
-      console.log("Copied SQLite DB to /tmp");
-    }
-    dbUrl = `file:${destPath}`;
-  } catch (e) {
-    console.error("Failed to copy SQLite DB to /tmp:", e);
-    // Fallback to source path (might fail on write)
-    dbUrl = `file:${sourcePath}`;
-  }
-}
+const log: NonNullable<ConstructorParameters<typeof PrismaClient>[0]["log"]> =
+  process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    datasources: {
-      db: {
-        url: dbUrl,
-      },
-    },
+    log,
+    datasources: { db: { url: databaseUrl } },
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

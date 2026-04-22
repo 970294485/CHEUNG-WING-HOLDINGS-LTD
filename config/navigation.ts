@@ -13,7 +13,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { title: "銷售開單管理", href: "/customers/sales-orders" },
       { title: "客戶跟進與分組", href: "/customers/groups-followup-sources" },
       { title: "發送推廣訊息", href: "/customers/email-promotion" },
-      { title: "銷售與客戶分析", href: "/sales/analysis" },
+      { title: "銷售分析", href: "/sales/analysis" },
+      { title: "客戶分析", href: "/customers/analysis" },
     ],
   },
   {
@@ -67,6 +68,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { title: "公司基本資料", href: "/data-entry/company-profile" },
       { title: "用戶與權限管理", href: "/data-entry/users" },
+      { title: "角色權限管理 (RBAC)", href: "/data-entry/role-permissions" },
       { title: "單號生成規則", href: "/data-entry/document-numbers" },
       { title: "會計科目與類別", href: "/accounting/accounts" },
       { title: "審批權限設置", href: "/financial/approval-permissions" },

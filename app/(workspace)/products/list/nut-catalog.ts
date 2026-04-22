@@ -1,0 +1,307 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
+
+function parseAttributesJson(raw: unknown): Record<string, unknown> {
+  if (raw == null) return {};
+  if (typeof raw === "string") {
+    try {
+      const o = JSON.parse(raw) as unknown;
+      return o && typeof o === "object" && !Array.isArray(o) ? (o as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) return { ...(raw as Record<string, unknown>) };
+  return {};
+}
+
+/**
+ * 列表同步時更新目錄：以資料庫既有 attributes 為準，**不再**用目錄覆寫
+ * category / subCategory / packaging / customAttributes（否則使用者刪改會在下次開列表還原）。
+ * - specs：與目錄深層合併（便於統一補「計價幣別」等欄位）
+ * - bom：資料庫已有陣列（含空陣列）則保留
+ * - 僅當某頂層欄位在 DB 完全缺失時，才用目錄補預設（新曾對齊 SKU 的列）
+ */
+export function mergeNutCatalogAttributes(
+  existingRaw: unknown,
+  catalogAttrs: Prisma.InputJsonValue
+): Prisma.InputJsonValue {
+  const ex = parseAttributesJson(existingRaw);
+  const cat = parseAttributesJson(catalogAttrs);
+
+  const exSpecs = parseAttributesJson(ex.specs);
+  const catSpecs = parseAttributesJson(cat.specs);
+  const exCustom = parseAttributesJson(ex.customAttributes);
+
+  const out: Record<string, unknown> = { ...ex };
+
+  out.specs = { ...exSpecs, ...catSpecs };
+
+  const exBom = ex.bom;
+  if (Array.isArray(exBom) && exBom.length > 0) {
+    out.bom = exBom;
+  } else if (Array.isArray(cat.bom)) {
+    out.bom = cat.bom;
+  }
+
+  const exTiers = ex.pricingTiers;
+  if (Array.isArray(exTiers) && exTiers.length > 0) {
+    out.pricingTiers = exTiers;
+  } else if (Array.isArray(cat.pricingTiers)) {
+    out.pricingTiers = cat.pricingTiers;
+  }
+
+  for (const key of ["category", "subCategory", "packaging"] as const) {
+    const v = out[key];
+    const missing = v === undefined || v === null || (typeof v === "string" && v.trim() === "");
+    if (missing && cat[key] != null) {
+      out[key] = cat[key];
+    }
+  }
+
+  if (Object.keys(exCustom).length === 0 && Object.keys(parseAttributesJson(cat.customAttributes)).length > 0) {
+    out.customAttributes = cat.customAttributes;
+  }
+
+  return out as Prisma.InputJsonValue;
+}
+
+/**
+ * 公司主數據中的堅果品類（碧根果、開心果、無殼核桃、杏仁）。
+ * 由產品列表頁與 prisma seed 共用，透過 SKU 冪等 upsert，與庫存／銷售單據中的既有 productId 對齊。
+ */
+export type NutCatalogRow = {
+  sku: string;
+  name: string;
+  barcode: string;
+  description: string;
+  price: number;
+  cost: number;
+  /** 主檔建立時間（演示：2026-03～06 分批維護） */
+  createdAtIso: string;
+  attributes: Prisma.InputJsonValue;
+  attachments: Prisma.InputJsonValue;
+};
+
+export const NUT_CATALOG: NutCatalogRow[] = [
+  {
+    sku: "PROD-001",
+    name: "碧根果（長壽果）",
+    barcode: "6950234517802",
+    description:
+      "美國進口原料，低溫烘焙；大宗與批發以「公斤」為計價與出貨單位，港幣（HKD）結算。2026-03 由採購部建檔，04 月品控補齊批次檢驗摘要；與主倉 WH-MAIN 入庫流水、報價 QT-202603-001 一致。",
+    price: 118.0,
+    cost: 72.0,
+    createdAtIso: "2026-03-08T10:20:00+08:00",
+    attachments: [
+      { type: "image", url: "/files/public/spec-pecan-202603.jpg" },
+      { type: "pdf", url: "/files/public/lab-report-PROD-001-202603.pdf" },
+    ],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "碧根果",
+      packaging: "大宗：散裝／編織袋等（按 kg 過磅出貨；零售包裝另議）",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "美國（喬治亞 / 德克薩斯產區）",
+        加工方式: "低溫烘烤",
+        等級: "大果（依批次檢驗證書為準）",
+        保質期: "12 個月（未開封）",
+        最後審核: "2026-04-02 倉儲主管覆核",
+      },
+      customAttributes: {
+        儲存條件: "陰涼乾燥、密封避光；開封後請儘快食用。",
+        過敏提示: "含堅果，過敏體質請留意。",
+        內部備註: "Q2 主力 SKU；與 PI-202603-8801 預收條款綁定。",
+      },
+      bom: [
+        { name: "食品級編織袋（25kg）", quantity: 1, unit: "個" },
+        { name: "乾燥劑包 5g", quantity: 2, unit: "包" },
+        { name: "批次標籤（含產地 QR）", quantity: 1, unit: "張" },
+      ],
+      pricingTiers: [
+        { name: "MOQ 50–199 kg", price: 122 },
+        { name: "200–499 kg", price: 118 },
+        { name: "≥500 kg 年約", price: 112 },
+      ],
+    },
+  },
+  {
+    sku: "PROD-002",
+    name: "開心果（原味）",
+    barcode: "6950234517819",
+    description:
+      "自然開口、紫衣綠仁，鹽焗原味；港幣結算，單價以每公斤（kg）為準，適合批發與分裝通路。2026-03 冷鏈 WH-COLD 試入庫後建檔，05–06 月依夏季風控加強抽檢濕度。",
+    price: 132.0,
+    cost: 84.0,
+    createdAtIso: "2026-03-19T14:05:00+08:00",
+    attachments: [
+      { type: "image", url: "/files/public/pistachio-lot-202604.png" },
+      { type: "video", url: "/files/public/opening-demo-PROD-002.mp4" },
+    ],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "開心果",
+      packaging: "大宗：按 kg 出貨（港幣計價）",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "美國 / 土耳其（按批次標示於外包裝）",
+        加工方式: "輕鹽焗烤",
+        等級: "自然開口率 ≥ 98%",
+        保質期: "10 個月（未開封）",
+        建議倉別: "WH-COLD（4–9 月）",
+      },
+      customAttributes: {
+        儲存條件: "密封防潮；夏季建議冷藏保存風味更佳。",
+        過敏提示: "含堅果。",
+        內部備註: "與 SEED-PO-202604-011 土耳其批次同規格代碼。",
+      },
+      bom: [
+        { name: "鋁箔內袋（食品級）", quantity: 1, unit: "個" },
+        { name: "外箱 10kg 裝（可堆疊）", quantity: 1, unit: "箱" },
+      ],
+      pricingTiers: [
+        { name: "試單 ≤80 kg", price: 138 },
+        { name: "81–300 kg", price: 132 },
+        { name: "≥301 kg 專線", price: 128 },
+      ],
+    },
+  },
+  {
+    sku: "PROD-003",
+    name: "無殼核桃仁",
+    barcode: "6950234517826",
+    description:
+      "去殼核桃仁，免剝即食；港幣（HKD）每公斤報價，適合食品廠、烘焙與堅果混合包採購。2026-04 由研發申請新增金屬探測參數至主檔；05 月與烘焙客戶 HK-NUT-006 試產對齊粒度。",
+    price: 98.0,
+    cost: 62.0,
+    createdAtIso: "2026-04-11T09:40:00+08:00",
+    attachments: [{ type: "image", url: "/files/public/walnut-kernel-202605.jpg" }],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "核桃",
+      packaging: "大宗：按 kg 出貨",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "新疆阿克蘇 / 雲南漾濞（按批次）",
+        加工方式: "去殼、人工挑揀、金屬探測",
+        等級: "頭路仁（半片為主）",
+        保質期: "8 個月（未開封）",
+        金屬探測: "Fe≤1.5mm, Sus≤2.0mm（2026-04 校準）",
+      },
+      customAttributes: {
+        儲存條件: "開封後請密封冷藏，避免油脂氧化產生油耗味。",
+        過敏提示: "含堅果。",
+        內部備註: "食品廠客戶偏好半片；與 SEED-SO-202605-020 出庫粒度一致。",
+      },
+      bom: [
+        { name: "真空袋（1kg 規格）", quantity: 1, unit: "個" },
+        { name: "充氮閥組件", quantity: 1, unit: "套" },
+      ],
+      pricingTiers: [
+        { name: "烘焙專線 100–399 kg", price: 98 },
+        { name: "≥400 kg", price: 93 },
+      ],
+    },
+  },
+  {
+    sku: "PROD-004",
+    name: "杏仁（巴旦木仁）",
+    barcode: "6950234517833",
+    description:
+      "巴旦木整仁，顆粒均勻；單價以港幣每公斤標示，輕烤原味為主，可配合大宗 kg 出貨。2026-05 建檔，06 月與禮盒組合料號對齊；售價階梯與母親節促銷檔期共用。",
+    price: 108.0,
+    cost: 68.0,
+    createdAtIso: "2026-05-03T16:15:00+08:00",
+    attachments: [
+      { type: "image", url: "/files/public/almond-np-202605.webp" },
+      { type: "pdf", url: "/files/public/allergen-matrix-2026Q2.pdf" },
+    ],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "杏仁 / 巴旦木",
+      packaging: "大宗：按 kg 出貨（港幣計價）",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "美國加州",
+        加工方式: "輕烤原味",
+        等級: "NP 級（顆粒完整）",
+        保質期: "12 個月（未開封）",
+        促銷檔期: "2026-05-10～06-08 禮盒綁定價",
+      },
+      customAttributes: {
+        儲存條件: "陰涼乾燥處密封保存。",
+        過敏提示: "含堅果。",
+        內部備註: "與 SEED-PO-202606-006 入庫 NP 級同批。",
+      },
+      bom: [
+        { name: "禮盒隔板（6 格）", quantity: 1, unit: "組" },
+        { name: "脫氧劑 3g", quantity: 1, unit: "包" },
+      ],
+      pricingTiers: [
+        { name: "標準批發", price: 108 },
+        { name: "禮盒綁定量 ≥300 kg", price: 104 },
+      ],
+    },
+  },
+];
+
+function attachmentsEmpty(raw: unknown): boolean {
+  if (raw == null) return true;
+  if (Array.isArray(raw)) return raw.length === 0;
+  if (typeof raw === "string") {
+    try {
+      const p = JSON.parse(raw) as unknown;
+      return !Array.isArray(p) || p.length === 0;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+}
+
+export async function syncNutCatalog(db: PrismaClient, companyId: string): Promise<void> {
+  for (const row of NUT_CATALOG) {
+    const existing = await db.product.findUnique({
+      where: { companyId_sku: { companyId, sku: row.sku } },
+      select: { id: true, attributes: true, attachments: true },
+    });
+
+    if (!existing) {
+      await db.product.create({
+        data: {
+          companyId,
+          sku: row.sku,
+          name: row.name,
+          barcode: row.barcode,
+          description: row.description,
+          price: row.price,
+          cost: row.cost,
+          attributes: row.attributes,
+          attachments: row.attachments,
+          createdAt: new Date(row.createdAtIso),
+        },
+      });
+      continue;
+    }
+
+    const mergedAttributes = mergeNutCatalogAttributes(existing.attributes, row.attributes);
+
+    await db.product.update({
+      where: { id: existing.id },
+      data: {
+        name: row.name,
+        barcode: row.barcode,
+        description: row.description,
+        price: row.price,
+        cost: row.cost,
+        attributes: mergedAttributes,
+        createdAt: new Date(row.createdAtIso),
+        ...(attachmentsEmpty(existing.attachments) ? { attachments: row.attachments } : {}),
+      },
+    });
+  }
+}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 import { deleteJournalForm, postJournalForm } from "@/lib/server/actions";
+import { JOURNAL_SOURCE_PAYMENT_REQUEST } from "@/lib/finance/sync-payment-request-journal";
 
 export default async function JournalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,6 +69,17 @@ export default async function JournalDetailPage({ params }: { params: Promise<{ 
       {!balanced ? (
         <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
           借貸不平衡，無法過帳（借 {td.toFixed(2)} / 貸 {tc.toFixed(2)}）。
+        </p>
+      ) : null}
+
+      {entry.sourceType === JOURNAL_SOURCE_PAYMENT_REQUEST && entry.sourceId ? (
+        <p className="rounded-md border border-violet-200 bg-violet-50/80 px-3 py-2 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
+          此憑證由<strong className="font-medium">已支付請款單</strong>自動建立（借 5100 管理費用、貸 1100
+          銀行存款）。請於
+          <Link href="/financial/payment-requests" className="mx-1 underline">
+            請款單管理
+          </Link>
+          查看流程；若需沖正請另開調整憑證。
         </p>
       ) : null}
 

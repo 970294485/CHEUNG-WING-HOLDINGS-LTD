@@ -1,38 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import {
+  emptyCustomerForm,
+  newCustomerDefaultsFromInvoice202500062,
+} from "@/lib/customers/new-customer-invoice-defaults";
 
 export default function CustomerDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const isNew = params.id === "new";
+  const id = String(params?.id ?? "");
+  const isNew = id === "new";
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    code: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    address: "",
-    taxId: "",
-    source: "",
-    status: "ACTIVE",
-    groupId: "",
-    followUps: [],
+  const [deleting, setDeleting] = useState(false);
+  const [formData, setFormData] = useState(() => {
+    const base = emptyCustomerForm();
+    if (isNew) {
+      return { ...base, ...newCustomerDefaultsFromInvoice202500062() };
+    }
+    return base;
   });
 
-  useEffect(() => {
-    if (!isNew) {
-      fetchCustomer();
-    }
-  }, [isNew]);
-
-  const fetchCustomer = async () => {
+  const fetchCustomer = useCallback(async (customerId: string) => {
     try {
-      const res = await fetch(`/api/customers/${params.id}`);
+      const res = await fetch(`/api/customers/${customerId}`);
       if (res.ok) {
         const data = await res.json();
         setFormData({
@@ -54,9 +48,19 @@ export default function CustomerDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    if (id === "new") {
+      setFormData({ ...emptyCustomerForm(), ...newCustomerDefaultsFromInvoice202500062() });
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    void fetchCustomer(id);
+  }, [id, fetchCustomer]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -65,13 +69,26 @@ export default function CustomerDetailPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const url = isNew ? "/api/customers" : `/api/customers/${params.id}`;
+      const url = isNew ? "/api/customers" : `/api/customers/${id}`;
       const method = isNew ? "POST" : "PUT";
       
+      const payload = {
+        name: formData.name,
+        code: formData.code,
+        contactPerson: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        taxId: formData.taxId,
+        source: formData.source,
+        status: formData.status,
+        groupId: formData.groupId,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -88,19 +105,50 @@ export default function CustomerDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (isNew) return;
+    const ok = window.confirm(
+      `確定要刪除客戶「${formData.name || id}」嗎？\n\n將一併刪除其銷售單據（報價／合同／預收發票）及跟進記錄；預收／應收關聯會解除。此操作無法還原。`
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/customers/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/customers/list");
+        router.refresh();
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      alert(typeof body?.error === "string" ? body.error : "刪除失敗");
+    } catch {
+      alert("刪除失敗");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-6">載入中...</div>;
   }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-          {isNew ? "新增客戶" : "編輯客戶"}
-        </h1>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+            {isNew ? "新增客戶" : "編輯客戶"}
+          </h1>
+          {isNew ? (
+            <p className="mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
+              已預填發票 202500062 的買方資料，可直接修改後儲存。
+            </p>
+          ) : null}
+        </div>
         <button
+          type="button"
           onClick={() => router.back()}
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+          className="shrink-0 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
         >
           返回列表
         </button>
@@ -215,6 +263,7 @@ export default function CustomerDetailPage() {
                 <option value="展會">展會</option>
                 <option value="官網">官網</option>
                 <option value="推薦">推薦</option>
+                <option value="發票提取">發票提取</option>
                 <option value="其他">其他</option>
               </select>
             </div>
@@ -236,21 +285,35 @@ export default function CustomerDetailPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="mr-3 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              {saving ? "儲存中..." : "儲存"}
-            </button>
+          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+            {!isNew ? (
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={deleting || saving}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-md hover:bg-red-50 disabled:opacity-50 dark:border-red-900/50 dark:bg-zinc-900 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                {deleting ? "刪除中…" : "刪除客戶"}
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {saving ? "儲存中..." : "儲存"}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -269,14 +332,14 @@ export default function CustomerDetailPage() {
                 if (!content) return;
                 
                 try {
-                  const res = await fetch(`/api/customers/${params.id}/follow-ups`, {
+                  const res = await fetch(`/api/customers/${id}/follow-ups`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content, type })
                   });
                   if (res.ok) {
                     form.reset();
-                    fetchCustomer(); // Refresh to get new follow-ups
+                    void fetchCustomer(id);
                   }
                 } catch (error) {
                   console.error(error);

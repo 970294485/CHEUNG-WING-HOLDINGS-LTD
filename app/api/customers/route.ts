@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/server";
+import { buildCustomerListWhere } from "@/lib/server/customers";
 
 export async function GET(request: Request) {
   try {
@@ -9,20 +11,10 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const groupId = searchParams.get("groupId") || "";
 
-    const where: any = { companyId };
-    
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { code: { contains: search, mode: "insensitive" } },
-        { contactPerson: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-      ];
-    }
-    
-    if (groupId) {
-      where.groupId = groupId;
-    }
+    const where: Prisma.CustomerWhereInput = {
+      ...buildCustomerListWhere(companyId, search),
+      ...(groupId ? { groupId } : {}),
+    };
 
     const customers = await prisma.customer.findMany({
       where,

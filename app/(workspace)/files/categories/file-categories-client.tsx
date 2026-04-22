@@ -37,13 +37,10 @@ export default function FileCategoriesClient() {
     isPublic: false,
   });
 
-  // TODO: Get real companyId from auth context
-  const companyId = "cm7g83z1e000008l4hj123456"; // Mock companyId for now
-
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await getFileCategories(companyId);
+      const res = await getFileCategories();
       if (res.success && res.data) {
         setCategories(res.data as any);
       }
@@ -90,7 +87,6 @@ export default function FileCategoriesClient() {
         }
       } else {
         const res = await createFileCategory({
-          companyId,
           ...formData,
         });
         if (res.success) {

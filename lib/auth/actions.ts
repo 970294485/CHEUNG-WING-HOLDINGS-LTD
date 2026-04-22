@@ -43,6 +43,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     email: user.email,
     name: user.name,
     permissions: Array.from(new Set(permissions)),
+    isSuperAdmin: false,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
@@ -64,5 +65,6 @@ export async function loginAction(formData: FormData): Promise<void> {
 
 export async function logoutAction(): Promise<void> {
   (await cookies()).delete("tvp_session");
+  (await cookies()).delete("tvp_active_company");
   redirect("/");
 }

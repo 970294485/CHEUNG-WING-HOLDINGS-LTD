@@ -42,13 +42,9 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
       .then((data) => setCustomers(data))
       .catch((err) => console.error("Failed to fetch customers:", err));
 
-    // Fetch products
-    fetch("/api/products")
+    fetch("/api/products", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7562/ingest/25b6807d-6a78-480b-9773-0fa4b4bd4303',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d5412d'},body:JSON.stringify({sessionId:'d5412d',location:'components/sales/SalesDocumentForm.tsx:43',message:'Fetch products response',data:{dataType: typeof data, isArray: Array.isArray(data), data},timestamp:Date.now(),runId:'run1',hypothesisId:'1'})}).catch(()=>{});
-        // #endregion
         if (Array.isArray(data)) {
           setProducts(data);
         } else {
@@ -89,7 +85,7 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
     if (field === "productId") {
       const product = products.find((p) => p.id === value);
       if (product) {
-        item.unitPrice = Number(product.price) || 0;
+        item.unitPrice = Number(product.price ?? 0) || 0;
       }
     }
 
@@ -289,15 +285,17 @@ export function SalesDocumentForm({ type, initialData, isEdit }: SalesDocumentFo
                 <div className="col-span-12 md:col-span-3 space-y-2">
                   <Label>產品 <span className="text-red-500">*</span></Label>
                   <Select
-                    value={item.productId}
+                    value={item.productId || undefined}
                     onValueChange={(value) => handleItemChange(index, "productId", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="選擇產品" />
+                      <SelectValue placeholder={products.length ? "選擇產品" : "暫無產品，請先在產品列表新增"} />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} ({p.sku ?? "—"})
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

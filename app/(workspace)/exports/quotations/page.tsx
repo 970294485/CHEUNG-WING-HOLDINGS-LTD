@@ -14,14 +14,15 @@ import {
 } from "@/components/ui/table";
 import { Download, Search, FileSpreadsheet } from "lucide-react";
 
-// 模擬報價單數據
-const mockQuotations = [
-  { id: "QT-2024-001", customer: "科技發展有限公司", date: "2024-03-20", validUntil: "2024-04-20", amount: 15000.0, status: "已確認" },
-  { id: "QT-2024-002", customer: "全球貿易集團", date: "2024-03-21", validUntil: "2024-04-21", amount: 28500.0, status: "待確認" },
-  { id: "QT-2024-003", customer: "創新科技有限公司", date: "2024-03-22", validUntil: "2024-04-22", amount: 9800.0, status: "已確認" },
-  { id: "QT-2024-004", customer: "未來網絡", date: "2024-03-23", validUntil: "2024-04-23", amount: 45000.0, status: "已失效" },
-  { id: "QT-2024-005", customer: "星辰實業", date: "2024-03-24", validUntil: "2024-04-24", amount: 12000.0, status: "待確認" },
-];
+/** 報價單列表資料源；可改為對接真實 API / 與銷售模塊一致 */
+const mockQuotations: {
+  id: string;
+  customer: string;
+  date: string;
+  validUntil: string;
+  amount: number;
+  status: string;
+}[] = [];
 
 export default function QuotationExportPage() {
   const [searchTerm, setSearchTerm] = useState("");

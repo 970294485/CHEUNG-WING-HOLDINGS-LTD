@@ -7,7 +7,6 @@ export async function requireAuth() {
     throw new Error("Unauthorized");
   }
   
-  // For now, we return the default company ID as we haven't implemented multi-tenant UI selection yet
   const companyId = await getDefaultCompanyId();
   
   return {

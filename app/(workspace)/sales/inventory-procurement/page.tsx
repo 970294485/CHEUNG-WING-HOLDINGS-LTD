@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 import { createInventoryTransaction } from "@/lib/server/actions";
@@ -25,11 +26,33 @@ export default async function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">庫存與採購對接</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          管理庫存出入庫操作，查看實時庫存臺賬及交易記錄。
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">庫存與採購對接</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            管理庫存出入庫操作，查看實時庫存臺賬及交易記錄。
+          </p>
+        </div>
+        <nav className="flex flex-wrap gap-2 text-sm">
+          <Link
+            href="/inventory/transactions"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            出入庫存管理
+          </Link>
+          <Link
+            href="/inventory/details"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            詳細庫存與成本
+          </Link>
+          <Link
+            href="/data-entry/purchase-orders"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            採購單管理
+          </Link>
+        </nav>
       </div>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">

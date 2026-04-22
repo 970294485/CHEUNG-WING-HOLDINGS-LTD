@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 import { getProfitAndLoss } from "@/lib/finance/reports";
+import { loadUnifiedAccountsReceivable } from "@/lib/finance/unified-accounts-receivable";
+import { loadUnifiedAccountsPayable } from "@/lib/finance/unified-accounts-payable";
 import { Prisma } from "@prisma/client";
 import { getSession } from "@/lib/auth/session";
 import {
@@ -38,15 +40,11 @@ export default async function DashboardPage() {
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-  const [company, pl, arOpen, apOpen, prepay, pendingPR, draftJe] = await Promise.all([
+  const [company, pl, arUnified, apUnified, prepay, pendingPR, draftJe] = await Promise.all([
     prisma.company.findUnique({ where: { id: companyId } }),
     getProfitAndLoss(companyId, { start, end }),
-    prisma.accountsReceivable.findMany({
-      where: { companyId, status: { in: ["OPEN", "PARTIAL"] } },
-    }),
-    prisma.accountsPayable.findMany({
-      where: { companyId, status: { in: ["OPEN", "PARTIAL"] } },
-    }),
+    loadUnifiedAccountsReceivable(companyId),
+    loadUnifiedAccountsPayable(companyId),
     prisma.prepayment.aggregate({
       where: { companyId, status: { not: "CLOSED" } },
       _sum: { amount: true },
@@ -55,8 +53,10 @@ export default async function DashboardPage() {
     prisma.journalEntry.count({ where: { companyId, status: "DRAFT" } }),
   ]);
 
-  const arOutstanding = arOpen.reduce((s, r) => s + (Number(r.amount) - Number(r.receivedAmount)), 0);
-  const apOutstanding = apOpen.reduce((s, r) => s + (Number(r.amount) - Number(r.paidAmount)), 0);
+  const arOpen = arUnified.filter((r) => r.status === "OPEN" || r.status === "PARTIAL");
+  const arOutstanding = arOpen.reduce((s, r) => s + (r.amount - r.receivedAmount), 0);
+  const apOpen = apUnified.filter((r) => r.status === "OPEN" || r.status === "PARTIAL");
+  const apOutstanding = apOpen.reduce((s, r) => s + (r.amount - r.paidAmount), 0);
 
   const today = new Date().toLocaleDateString("zh-TW", {
     year: "numeric",

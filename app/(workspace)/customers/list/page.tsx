@@ -1,76 +1,94 @@
-"use client";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { CustomerDeleteButton } from "@/components/customers/CustomerDeleteButton";
+import { getSession } from "@/lib/auth/session";
+import { getDefaultCompanyId } from "@/lib/company";
+import { findCustomersForList } from "@/lib/server/customers";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+export const dynamic = "force-dynamic";
 
-export default function CustomerListPage() {
-  const router = useRouter();
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+type PageProps = {
+  searchParams: Promise<{ search?: string }>;
+};
 
-  const fetchCustomers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/customers?search=${encodeURIComponent(search)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch customers:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function CustomerListPage({ searchParams }: PageProps) {
+  const session = await getSession();
+  if (!session?.sub) redirect("/");
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [search]);
+  const sp = await searchParams;
+  const search = typeof sp.search === "string" ? sp.search.trim() : "";
+  const companyId = await getDefaultCompanyId();
+  const customers = await findCustomersForList(companyId, search);
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">客戶檔案管理</h1>
-        <button
-          onClick={() => router.push("/customers/list/new")}
-          className="bg-zinc-900 text-white px-4 py-2 rounded-md text-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+        <Link
+          href="/customers/list/new"
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           新增客戶
+        </Link>
+      </div>
+
+      <form method="get" className="mb-6 flex max-w-2xl flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <label htmlFor="customer-search" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            搜尋
+          </label>
+          <input
+            id="customer-search"
+            name="search"
+            type="text"
+            defaultValue={search}
+            placeholder="客戶名稱、編號、聯絡人、電話或發票備註關鍵字…"
+            className="w-full rounded-md border border-zinc-300 px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+          />
+        </div>
+        <button
+          type="submit"
+          className="rounded-md bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
+        >
+          搜尋
         </button>
-      </div>
+        {search ? (
+          <Link
+            href="/customers/list"
+            className="rounded-md border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            清除
+          </Link>
+        ) : null}
+      </form>
 
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="搜尋客戶名稱、編號、聯絡人或電話..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-        />
-      </div>
-
-      <div className="bg-white dark:bg-zinc-900 shadow-sm rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">客戶名稱</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">編號</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">聯絡人</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">電話</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">狀態</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  客戶名稱
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  編號
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  聯絡人
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  電話
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  狀態
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  操作
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-800">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-zinc-500">
-                    載入中...
-                  </td>
-                </tr>
-              ) : customers.length === 0 ? (
+            <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
+              {customers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-center text-sm text-zinc-500">
                     沒有找到客戶資料
@@ -79,34 +97,39 @@ export default function CustomerListPage() {
               ) : (
                 customers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900 dark:text-white">
                       {customer.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">
                       {customer.code || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">
                       {customer.contactPerson || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">
                       {customer.phone || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        customer.status === "ACTIVE" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" 
-                          : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400"
-                      }`}>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm">
+                      <span
+                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                          customer.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400"
+                        }`}
+                      >
                         {customer.status === "ACTIVE" ? "活躍" : customer.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => router.push(`/customers/list/${customer.id}`)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
-                      >
-                        編輯 / 詳情
-                      </button>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                      <span className="inline-flex items-center gap-3">
+                        <Link
+                          href={`/customers/list/${customer.id}`}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          編輯 / 詳情
+                        </Link>
+                        <CustomerDeleteButton id={customer.id} name={customer.name} />
+                      </span>
                     </td>
                   </tr>
                 ))

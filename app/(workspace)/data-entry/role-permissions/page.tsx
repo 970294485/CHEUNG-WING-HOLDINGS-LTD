@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 import RoleForm from "./RoleForm";
@@ -33,7 +34,14 @@ export default async function RolePermissionsPage() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">級別權限設定 (RBAC)</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            管理系統中的角色及其對應的權限。
+            管理系統中的角色及其對應的權限。將角色分配給用戶請至
+            <Link
+              href="/data-entry/users"
+              className="mx-1 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              用戶與權限管理
+            </Link>
+            。
           </p>
         </div>
         <RoleForm permissions={permissions} />

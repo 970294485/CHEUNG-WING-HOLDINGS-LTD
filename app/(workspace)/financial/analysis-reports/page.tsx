@@ -16,7 +16,6 @@ export default async function AnalysisReportsPage() {
 
   const summaryData = [
     { department: "市場部", project: "Q1 推廣", income: 0, expense: 45000, date: "2026-03-15" },
-    { department: "銷售部", project: "大客戶A", income: 120000, expense: 5000, date: "2026-03-12" },
     { department: "研發部", project: "新產品研發", income: 0, expense: 65000, date: "2026-03-10" },
     { department: "行政部", project: "日常運營", income: 0, expense: 15000, date: "2026-03-05" },
   ];

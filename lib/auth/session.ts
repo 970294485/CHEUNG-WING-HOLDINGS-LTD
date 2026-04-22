@@ -7,6 +7,8 @@ export type SessionUser = {
   email: string;
   name?: string | null;
   permissions?: string[];
+  /** JWT 內可選；未帶則視為 false */
+  isSuperAdmin?: boolean;
 };
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -19,6 +21,7 @@ export async function getSession(): Promise<SessionUser | null> {
       email: String(payload.email ?? ""),
       name: payload.name != null ? String(payload.name) : null,
       permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
+      isSuperAdmin: payload.isSuperAdmin === true,
     };
   } catch {
     return null;
