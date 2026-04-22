@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 loadEnvConfig(process.cwd());
 
@@ -36,7 +37,7 @@ process.env.DIRECT_URL = directUrl;
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-const log: NonNullable<ConstructorParameters<typeof PrismaClient>[0]["log"]> =
+const log: Prisma.LogLevel[] =
   process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
 
 export const prisma =
