@@ -1,15 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 
+const APPROVAL_LOG_OPERATORS = [
+  "TAI CHUK NI戴祝妮",
+  "WONG OI CHUN黃爱真",
+  "WONG OI YEE 黃愛義",
+  "WONG YUEN YING黃婉英",
+] as const;
+
+function randomApprovalOperator() {
+  const i = Math.floor(Math.random() * APPROVAL_LOG_OPERATORS.length);
+  return APPROVAL_LOG_OPERATORS[i];
+}
+
 export default async function ApprovalPermissionsPage() {
   const companyId = await getDefaultCompanyId();
 
-  // Mock data for approval logs
+  // Mock data for approval logs（操作人從指定名單隨機）
   const approvalLogs = [
-    { id: 1, doc: "EXP-202603-045", user: "張組長", action: "准予報銷", time: "2026-03-24 10:30:15", comment: "同意" },
-    { id: 2, doc: "EXP-202603-042", user: "李財務", action: "退回修改", time: "2026-03-24 09:15:22", comment: "發票抬頭錯誤，請重新上傳" },
-    { id: 3, doc: "EXP-202603-040", user: "王總", action: "駁回", time: "2026-03-23 16:45:10", comment: "超出預算，暫不批准" },
-    { id: 4, doc: "EXP-202603-038", user: "李財務", action: "准予報銷", time: "2026-03-23 14:20:05", comment: "核對無誤" },
+    { id: 1, doc: "EXP-202603-045", user: randomApprovalOperator(), action: "准予報銷", time: "2026-03-24 10:30:15", comment: "同意" },
+    { id: 2, doc: "EXP-202603-042", user: randomApprovalOperator(), action: "退回修改", time: "2026-03-24 09:15:22", comment: "發票抬頭錯誤，請重新上傳" },
+    { id: 3, doc: "EXP-202603-040", user: randomApprovalOperator(), action: "駁回", time: "2026-03-23 16:45:10", comment: "超出預算，暫不批准" },
+    { id: 4, doc: "EXP-202603-038", user: randomApprovalOperator(), action: "准予報銷", time: "2026-03-23 14:20:05", comment: "核對無誤" },
   ];
 
   return (

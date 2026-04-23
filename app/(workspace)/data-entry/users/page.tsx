@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
+import { getSession } from "@/lib/auth/session";
+import { COMPANY_ROLE_BUSINESS_NAME, COMPANY_ROLE_NAME } from "@/lib/rbac/seed-company-rbac";
 import UserForm from "./UserForm";
+import UsersTable from "./UsersTable";
 
 export default async function UsersPage() {
+  const session = await getSession();
   const companyId = await getDefaultCompanyId();
-  
-  const [users, roles] = await Promise.all([
+
+  const [users, roles, companies, superAdminCount] = await Promise.all([
     prisma.user.findMany({
       where: {
         roles: {
@@ -15,8 +19,10 @@ export default async function UsersPage() {
       },
       include: {
         roles: {
-          where: { companyId },
-          include: { role: true },
+          include: {
+            role: true,
+            company: { select: { id: true, name: true, code: true } },
+          },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -24,8 +30,26 @@ export default async function UsersPage() {
     prisma.role.findMany({
       where: { companyId },
       select: { id: true, name: true },
-    })
+    }),
+    prisma.company.findMany({
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.user.count({ where: { isSuperAdmin: true } }),
   ]);
+
+  const userRows = users.map((u) => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    isSuperAdmin: u.isSuperAdmin,
+    createdAt: u.createdAt.toISOString(),
+    roles: u.roles.map((ur) => ({
+      companyId: ur.companyId,
+      role: { id: ur.role.id, name: ur.role.name },
+      company: ur.company,
+    })),
+  }));
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -46,53 +70,15 @@ export default async function UsersPage() {
         <UserForm roles={roles} />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-            <tr>
-              <th className="px-4 py-3">用戶名稱</th>
-              <th className="px-4 py-3">登錄郵箱</th>
-              <th className="px-4 py-3">分配角色</th>
-              <th className="px-4 py-3">創建時間</th>
-              <th className="px-4 py-3 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b border-zinc-100 dark:border-zinc-800">
-                <td className="px-4 py-3 font-medium">{user.name || "—"}</td>
-                <td className="px-4 py-3 font-mono text-zinc-600 dark:text-zinc-400">{user.email}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {user.roles.map((ur) => (
-                      <span
-                        key={ur.role.id}
-                        className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                      >
-                        {ur.role.name}
-                      </span>
-                    ))}
-                    {user.roles.length === 0 && <span className="text-zinc-400">無角色</span>}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-zinc-500">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button className="text-blue-600 hover:underline dark:text-blue-400">編輯</button>
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                  暫無用戶數據
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <UsersTable
+        users={userRows}
+        companies={companies}
+        defaultCompanyId={companyId}
+        builtinRoleNames={[COMPANY_ROLE_NAME, COMPANY_ROLE_BUSINESS_NAME]}
+        currentUserId={session?.sub ?? ""}
+        superAdminCount={superAdminCount}
+        isPlatformSuperAdmin={session?.isSuperAdmin === true}
+      />
     </div>
   );
 }
