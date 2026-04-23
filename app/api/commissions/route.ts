@@ -2,6 +2,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/server";
 
+/** 本公司銷售人員（財務與佣金整合演示：依合同 id 穩定映射至其中一人） */
+const COMPANY_SALESPEOPLE = [
+  "TAI CHUK NI戴祝妮",
+  "WONG OI CHUN黃爱真",
+  "WONG OI YEE 黃愛義",
+  "WONG YUEN YING黃婉英",
+] as const;
+
+function salespersonForContractId(contractId: string): string {
+  let h = 0;
+  for (let i = 0; i < contractId.length; i++) {
+    h = (Math.imul(31, h) + contractId.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(h) % COMPANY_SALESPEOPLE.length;
+  return COMPANY_SALESPEOPLE[idx];
+}
+
 export async function GET(request: Request) {
   try {
     const { companyId } = await requireAuth();
@@ -51,7 +68,7 @@ export async function GET(request: Request) {
       commissionRate: commissionRate * 100,
       commissionAmount: Number(contract.totalAmount) * commissionRate,
       status: "待結算", // 實際業務中可能需要單獨的表來記錄佣金結算狀態
-      salesperson: "系統默認銷售" // 實際業務中應關聯具體的銷售人員
+      salesperson: salespersonForContractId(contract.id),
     }));
 
     // 計算彙總數據

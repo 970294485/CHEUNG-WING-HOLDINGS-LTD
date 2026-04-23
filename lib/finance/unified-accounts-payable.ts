@@ -11,6 +11,15 @@ function prToApStatus(s: PaymentRequestStatus): ArApStatus | null {
   return null;
 }
 
+/** 與 prisma seed 中 prSeedMarker 對應；僅用於冪等，列表顯示時剝離。 */
+const PR_SEED_TITLE_SUFFIX = "（請款種子）";
+
+export function stripPaymentRequestSeedTitleSuffix(title: string): string {
+  return title.endsWith(PR_SEED_TITLE_SUFFIX)
+    ? title.slice(0, -PR_SEED_TITLE_SUFFIX.length)
+    : title;
+}
+
 export type UnifiedApRow = {
   id: string;
   source: "MANUAL" | "PAYMENT_REQUEST";
@@ -23,9 +32,8 @@ export type UnifiedApRow = {
   issueDate: Date;
   dueDate: Date | null;
   status: ArApStatus;
-  /** 請款單：部門 / 請款人（手動列為 null） */
+  /** 請款單：部門（手動列為 null） */
   department: string | null;
-  requestedBy: string | null;
 };
 
 /**
@@ -61,7 +69,6 @@ export async function loadUnifiedAccountsPayable(companyId: string): Promise<Uni
     dueDate: m.dueDate ?? null,
     status: m.status,
     department: null,
-    requestedBy: null,
   }));
 
   const fromPr: UnifiedApRow[] = [];
@@ -70,16 +77,12 @@ export async function loadUnifiedAccountsPayable(companyId: string): Promise<Uni
     if (!st) continue;
     const amount = Number(p.amount);
     const paid = p.status === "PAID" ? amount : 0;
-    const parts = [
-      p.purpose,
-      p.department ? `部門：${p.department}` : null,
-      p.requestedBy ? `請款人：${p.requestedBy}` : null,
-    ].filter(Boolean);
+    const parts = [p.purpose, p.department ? `部門：${p.department}` : null].filter(Boolean);
     fromPr.push({
       id: `pr:${p.id}`,
       source: "PAYMENT_REQUEST",
       paymentRequestId: p.id,
-      vendorName: `[請款] ${p.title}`,
+      vendorName: `[請款] ${stripPaymentRequestSeedTitleSuffix(p.title)}`,
       description: parts.length ? parts.join("；") : null,
       billNo: `PR-${p.id.slice(-8).toUpperCase()}`,
       amount,
@@ -88,7 +91,6 @@ export async function loadUnifiedAccountsPayable(companyId: string): Promise<Uni
       dueDate: null,
       status: st,
       department: p.department,
-      requestedBy: p.requestedBy,
     });
   }
 

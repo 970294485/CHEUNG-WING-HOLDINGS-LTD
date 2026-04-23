@@ -150,7 +150,6 @@ async function main() {
     amount: string;
     purpose: string;
     status: PaymentRequestStatus;
-    requestedBy: string;
     department: string;
     category: string;
   };
@@ -160,7 +159,6 @@ async function main() {
       amount: "1280",
       purpose: "月結運費",
       status: "SUBMITTED",
-      requestedBy: "陳一",
       department: "行政部",
       category: "物流",
     },
@@ -169,7 +167,6 @@ async function main() {
       amount: "9600",
       purpose: "協作與郵箱套件",
       status: "APPROVED",
-      requestedBy: "林二",
       department: "財務部",
       category: "其他",
     },
@@ -178,7 +175,6 @@ async function main() {
       amount: "4200",
       purpose: "季度訂閱",
       status: "PAID",
-      requestedBy: "王三",
       department: "品質與合規部",
       category: "其他",
     },
@@ -187,7 +183,6 @@ async function main() {
       amount: "5600",
       purpose: "實報實銷",
       status: "DRAFT",
-      requestedBy: "張四",
       department: "市場部",
       category: "差旅",
     },
@@ -196,7 +191,6 @@ async function main() {
       amount: "3100",
       purpose: "夜間到櫃",
       status: "REJECTED",
-      requestedBy: "趙五",
       department: "物流倉儲部",
       category: "物流",
     },
@@ -212,7 +206,6 @@ async function main() {
         amount: new Prisma.Decimal(r.amount),
         purpose: r.purpose,
         status: r.status,
-        requestedBy: r.requestedBy,
         department: r.department,
         category: r.category,
         approverRole: "finance_manager",
@@ -373,65 +366,6 @@ async function main() {
   // --- Products & Inventory ---
   /** 堅果主數據（PROD-001～004），與產品列表 / 採購種子共用 */
   await syncNutCatalog(prisma, company.id);
-
-  const macInshellAttrs = {
-    category: "堅果炒貨",
-    subCategory: "夏威夷果（帶殼）",
-    packaging: "大宗：噸袋／散裝過磅（KGS）；亦可按貨櫃入倉",
-    specs: {
-      計價幣別: "港幣 HKD",
-      計價單位: "每公斤（HKD/kg）",
-      等級: "B 級（帶殼）",
-      保質期: "18 個月（未開封，依批次標籤）",
-      主檔維護: "2026-06-12 盤點後補入調整單 SEED-ADJ-202606-STOCKTAKE",
-    },
-    customAttributes: {
-      儲存條件: "主倉 WH-MAIN 乾貨區；避免與強味貨品混放。",
-      內部備註: "與 SEED-PO-202603-312、202605-007、202606-018 大宗入庫單價區間一致（56.0–57.1 HKD/kg）。",
-    },
-    bom: [
-      { name: "噸袋內襯（PE）", quantity: 1, unit: "套" },
-      { name: "繞膜固定帶", quantity: 2, unit: "卷" },
-    ],
-    pricingTiers: [
-      { name: "現貨 ≤5 噸", price: 58 },
-      { name: "5–20 噸", price: 56 },
-      { name: "年約 ≥20 噸", price: 54 },
-    ],
-  } as const;
-
-  const macInshellAttachments = [
-    { type: "pdf", url: "/files/public/invoice-ref-202500062-summary.pdf" },
-    { type: "image", url: "/files/public/macadamia-inshell-b-grade-202606.jpg" },
-  ];
-
-  await prisma.product.upsert({
-    where: { companyId_sku: { companyId: company.id, sku: "MAC-B-INSHELL-KG" } },
-    create: {
-      companyId: company.id,
-      sku: "MAC-B-INSHELL-KG",
-      name: "帶殼夏威夷果 (B級) / INSHELL MACADAMIA NUTS (B Grade)",
-      barcode: "9312345678901",
-      description:
-        "單位：KGS。歷史來源：發票 202500062（單價 HKD 56.00/KGS，數量 36,340 KGS）。2026-03～06 主倉大宗流水已與採購／出庫種子對齊；06 月盤點含短溢調整。",
-      price: new Prisma.Decimal("56.00"),
-      cost: new Prisma.Decimal("56.35"),
-      attributes: macInshellAttrs as object,
-      attachments: macInshellAttachments as object[],
-      createdAt: new Date("2026-06-02T11:30:00+08:00"),
-    },
-    update: {
-      name: "帶殼夏威夷果 (B級) / INSHELL MACADAMIA NUTS (B Grade)",
-      barcode: "9312345678901",
-      description:
-        "單位：KGS。歷史來源：發票 202500062（單價 HKD 56.00/KGS，數量 36,340 KGS）。2026-03～06 主倉大宗流水已與採購／出庫種子對齊；06 月盤點含短溢調整。",
-      price: new Prisma.Decimal("56.00"),
-      cost: new Prisma.Decimal("56.35"),
-      attributes: macInshellAttrs as object,
-      attachments: macInshellAttachments as object[],
-      createdAt: new Date("2026-06-02T11:30:00+08:00"),
-    },
-  });
 
   /** 採購單（2026/03–06）：堅果大宗＋帶殼夏威夷果，與庫存種子、供應商敘述一致；依單號冪等 upsert */
   await ensureQ2NutPurchaseOrders(prisma, company.id);

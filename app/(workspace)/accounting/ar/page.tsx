@@ -8,6 +8,7 @@ import { loadUnifiedAccountsReceivable } from "@/lib/finance/unified-accounts-re
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { formatZhDateWithYear } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
 
 const statusLabel: Record<string, string> = {
@@ -290,7 +291,7 @@ export default async function AccountsReceivablePage({
                         ) : null}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 align-top text-zinc-600 tabular-nums dark:text-zinc-400">
-                        {r.issueDate.toLocaleDateString("zh-CN")}
+                        {formatZhDateWithYear(r.issueDate)}
                       </td>
                       <td className="px-4 py-3 align-top text-right tabular-nums text-zinc-800 dark:text-zinc-200">
                         ¥{fmtMoney(r.amount)}
@@ -318,8 +319,8 @@ export default async function AccountsReceivablePage({
                           {statusLabel[r.status] ?? r.status}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 align-top text-zinc-600 dark:text-zinc-400">
-                        {r.dueDate ? r.dueDate.toLocaleDateString("zh-CN") : "—"}
+                      <td className="whitespace-nowrap px-4 py-3 align-top text-zinc-600 tabular-nums dark:text-zinc-400">
+                        {r.dueDate ? formatZhDateWithYear(r.dueDate) : "—"}
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex flex-col gap-1.5 text-xs">

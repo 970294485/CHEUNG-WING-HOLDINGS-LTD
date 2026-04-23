@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDefaultCompanyId } from "@/lib/company";
 import { createPayable } from "@/lib/server/actions";
 import { loadUnifiedAccountsPayable } from "@/lib/finance/unified-accounts-payable";
+import { formatZhDateWithYear } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
 
 const statusLabel: Record<string, string> = {
@@ -134,10 +135,8 @@ export default async function AccountsPayablePage() {
                       <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                         {[r.billNo, r.description].filter(Boolean).join(" · ") || "—"}
                       </div>
-                      {r.source === "PAYMENT_REQUEST" && (r.department || r.requestedBy) ? (
-                        <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                          {[r.department, r.requestedBy].filter(Boolean).join(" · ")}
-                        </div>
+                      {r.source === "PAYMENT_REQUEST" && r.department ? (
+                        <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{r.department}</div>
                       ) : null}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
@@ -171,10 +170,10 @@ export default async function AccountsPayablePage() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-600 tabular-nums dark:text-zinc-400">
-                      {r.issueDate.toLocaleDateString("zh-CN")}
+                      {formatZhDateWithYear(r.issueDate)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2 align-top text-zinc-600 dark:text-zinc-400">
-                      {r.dueDate ? r.dueDate.toLocaleDateString("zh-CN") : "—"}
+                      {r.dueDate ? formatZhDateWithYear(r.dueDate) : "—"}
                     </td>
                   </tr>
                 );

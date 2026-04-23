@@ -70,7 +70,8 @@ export default async function AnalysisReportsPage() {
             const maxVal = 200000;
             const revHeight = (d.revenue / maxVal) * 100;
             const expHeight = (d.expense / maxVal) * 100;
-            
+            const year = i < 3 ? 2025 : 2026;
+
             return (
               <div key={i} className="flex flex-col items-center flex-1 group">
                 <div className="flex items-end gap-1 w-full justify-center h-48 mb-2">
@@ -91,7 +92,9 @@ export default async function AnalysisReportsPage() {
                     </div>
                   </div>
                 </div>
-                <span className="text-xs text-zinc-500">{d.month}</span>
+                <span className="text-xs text-zinc-500">
+                  {year}年{d.month}
+                </span>
               </div>
             );
           })}

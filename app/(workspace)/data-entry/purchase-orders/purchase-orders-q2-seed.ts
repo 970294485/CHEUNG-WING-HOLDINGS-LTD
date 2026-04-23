@@ -228,7 +228,7 @@ function orderDateUtc(y: number, month1to12: number, day: number): Date {
 
 /**
  * 寫入 2026 年 3–6 月採購單（堅果四品項＋帶殼夏威夷果大宗），單價／數量與庫存種子、港幣 kg 口徑一致。
- * 冪等：依單號 upsert 主檔並替換明細。會呼叫 syncNutCatalog 以確保 PROD-001–004 存在。
+ * 冪等：依單號 upsert 主檔並替換明細。會呼叫 syncNutCatalog 以確保 PROD-001–004 與 MAC-B-INSHELL-KG 存在。
  */
 export async function ensureQ2NutPurchaseOrders(db: PrismaClient, companyId: string): Promise<void> {
   await syncNutCatalog(db, companyId);
@@ -242,7 +242,7 @@ export async function ensureQ2NutPurchaseOrders(db: PrismaClient, companyId: str
       select: { id: true },
     });
     if (!p) {
-      throw new Error(`採購單種子需要產品 ${sku}；請確認已執行 syncNutCatalog 及 MAC-B-INSHELL-KG 主檔。`);
+      throw new Error(`採購單種子需要產品 ${sku}；請確認已執行 syncNutCatalog（含 MAC-B-INSHELL-KG）。`);
     }
     skuToId[sku] = p.id;
   }

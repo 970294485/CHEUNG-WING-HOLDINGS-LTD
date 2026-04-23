@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
+import { stripPaymentRequestSeedTitleSuffix } from "@/lib/finance/unified-accounts-payable";
+import { formatZhDateWithYear } from "@/lib/format-date";
 import { createPaymentRequest, paymentRequestDecisionForm } from "@/lib/server/actions";
 
 const statusLabel: Record<string, string> = {
@@ -31,15 +33,9 @@ export default async function PaymentRequestsPage() {
         <h3 className="text-sm font-semibold">新建請款單 (Expense Request Form)</h3>
         <form action={createPaymentRequest} className="mt-4 grid gap-3 sm:grid-cols-2">
           <input
-            name="requestedBy"
-            placeholder="請款人"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
-            required
-          />
-          <input
             name="department"
             placeholder="所屬部門 (如：市場部)"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
+            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950 sm:col-span-2"
             required
           />
           <select
@@ -108,7 +104,7 @@ export default async function PaymentRequestsPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
             <tr>
-              <th className="px-4 py-3">請款人 / 部門</th>
+              <th className="px-4 py-3">部門</th>
               <th className="px-4 py-3">費用類別</th>
               <th className="px-4 py-3">標題 / 備註</th>
               <th className="px-4 py-3 text-right">金額</th>
@@ -120,13 +116,10 @@ export default async function PaymentRequestsPage() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-b border-zinc-100 dark:border-zinc-800">
-                <td className="px-4 py-2">
-                  <div className="font-medium">{r.requestedBy ?? "—"}</div>
-                  <div className="text-xs text-zinc-500">{r.department ?? "—"}</div>
-                </td>
+                <td className="px-4 py-2 font-medium">{r.department ?? "—"}</td>
                 <td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">{r.category ?? "—"}</td>
                 <td className="px-4 py-2">
-                  <div className="font-medium">{r.title}</div>
+                  <div className="font-medium">{stripPaymentRequestSeedTitleSuffix(r.title)}</div>
                   <div className="text-xs text-zinc-500">{r.purpose ?? "—"}</div>
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">${r.amount.toFixed(2)}</td>
@@ -141,8 +134,8 @@ export default async function PaymentRequestsPage() {
                     {statusLabel[r.status] ?? r.status}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">
-                  {r.createdAt.toLocaleDateString()}
+                <td className="px-4 py-2 text-zinc-600 tabular-nums dark:text-zinc-400">
+                  {formatZhDateWithYear(r.createdAt)}
                 </td>
                 <td className="px-4 py-2">
                   {r.status === "SUBMITTED" ? (

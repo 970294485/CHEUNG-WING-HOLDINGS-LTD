@@ -37,7 +37,7 @@ export default async function LoginPage({
               autoComplete="username"
               required
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-950"
-              placeholder="demo@tvp.local"
+              placeholder=""
             />
           </label>
           <label className="block text-sm">
@@ -58,13 +58,6 @@ export default async function LoginPage({
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-zinc-500">
-          演示賬號：<code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">demo@tvp.local</code>
-          <br />
-          <span className="mt-1 inline-block">
-            密碼：<code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">demo123</code>
-          </span>
-        </p>
       </div>
     </div>
   );

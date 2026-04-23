@@ -14,7 +14,7 @@ function sectionOpenDefault(pathname: string) {
   return init;
 }
 
-export function AppSidebar({ userLabel }: { userLabel: string }) {
+export function AppSidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>(() => sectionOpenDefault(pathname));
 
@@ -34,9 +34,6 @@ export function AppSidebar({ userLabel }: { userLabel: string }) {
         <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Cheung Wing Holdings Limited
         </Link>
-        <p className="mt-1 truncate text-xs text-zinc-500" title={userLabel}>
-          {userLabel}
-        </p>
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         {NAV_SECTIONS.map((section) => {

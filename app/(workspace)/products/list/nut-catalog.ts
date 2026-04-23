@@ -18,7 +18,7 @@ function parseAttributesJson(raw: unknown): Record<string, unknown> {
  * 列表同步時更新目錄：以資料庫既有 attributes 為準，**不再**用目錄覆寫
  * category / subCategory / packaging / customAttributes（否則使用者刪改會在下次開列表還原）。
  * - specs：與目錄深層合併（便於統一補「計價幣別」等欄位）
- * - bom：資料庫已有陣列（含空陣列）則保留
+ * - bom：目錄若含 `bom` 陣列（可為空）則以目錄為準，便於統一清空配件清單
  * - 僅當某頂層欄位在 DB 完全缺失時，才用目錄補預設（新曾對齊 SKU 的列）
  */
 export function mergeNutCatalogAttributes(
@@ -37,10 +37,10 @@ export function mergeNutCatalogAttributes(
   out.specs = { ...exSpecs, ...catSpecs };
 
   const exBom = ex.bom;
-  if (Array.isArray(exBom) && exBom.length > 0) {
-    out.bom = exBom;
-  } else if (Array.isArray(cat.bom)) {
+  if (Array.isArray(cat.bom)) {
     out.bom = cat.bom;
+  } else if (Array.isArray(exBom) && exBom.length > 0) {
+    out.bom = exBom;
   }
 
   const exTiers = ex.pricingTiers;
@@ -66,7 +66,7 @@ export function mergeNutCatalogAttributes(
 }
 
 /**
- * 公司主數據中的堅果品類（碧根果、開心果、無殼核桃、杏仁）。
+ * 公司主數據中的堅果品類（碧根果、開心果、無殼核桃、杏仁、帶殼夏威夷果 B 級）。
  * 由產品列表頁與 prisma seed 共用，透過 SKU 冪等 upsert，與庫存／銷售單據中的既有 productId 對齊。
  */
 export type NutCatalogRow = {
@@ -114,11 +114,7 @@ export const NUT_CATALOG: NutCatalogRow[] = [
         過敏提示: "含堅果，過敏體質請留意。",
         內部備註: "Q2 主力 SKU；與 PI-202603-8801 預收條款綁定。",
       },
-      bom: [
-        { name: "食品級編織袋（25kg）", quantity: 1, unit: "個" },
-        { name: "乾燥劑包 5g", quantity: 2, unit: "包" },
-        { name: "批次標籤（含產地 QR）", quantity: 1, unit: "張" },
-      ],
+      bom: [],
       pricingTiers: [
         { name: "MOQ 50–199 kg", price: 122 },
         { name: "200–499 kg", price: 118 },
@@ -157,10 +153,7 @@ export const NUT_CATALOG: NutCatalogRow[] = [
         過敏提示: "含堅果。",
         內部備註: "與 SEED-PO-202604-011 土耳其批次同規格代碼。",
       },
-      bom: [
-        { name: "鋁箔內袋（食品級）", quantity: 1, unit: "個" },
-        { name: "外箱 10kg 裝（可堆疊）", quantity: 1, unit: "箱" },
-      ],
+      bom: [],
       pricingTiers: [
         { name: "試單 ≤80 kg", price: 138 },
         { name: "81–300 kg", price: 132 },
@@ -196,10 +189,7 @@ export const NUT_CATALOG: NutCatalogRow[] = [
         過敏提示: "含堅果。",
         內部備註: "食品廠客戶偏好半片；與 SEED-SO-202605-020 出庫粒度一致。",
       },
-      bom: [
-        { name: "真空袋（1kg 規格）", quantity: 1, unit: "個" },
-        { name: "充氮閥組件", quantity: 1, unit: "套" },
-      ],
+      bom: [],
       pricingTiers: [
         { name: "烘焙專線 100–399 kg", price: 98 },
         { name: "≥400 kg", price: 93 },
@@ -237,13 +227,49 @@ export const NUT_CATALOG: NutCatalogRow[] = [
         過敏提示: "含堅果。",
         內部備註: "與 SEED-PO-202606-006 入庫 NP 級同批。",
       },
-      bom: [
-        { name: "禮盒隔板（6 格）", quantity: 1, unit: "組" },
-        { name: "脫氧劑 3g", quantity: 1, unit: "包" },
-      ],
+      bom: [],
       pricingTiers: [
         { name: "標準批發", price: 108 },
         { name: "禮盒綁定量 ≥300 kg", price: 104 },
+      ],
+    },
+  },
+  {
+    sku: "MAC-B-INSHELL-KG",
+    name: "帶殼夏威夷果 (B級) / INSHELL MACADAMIA NUTS (B Grade)",
+    barcode: "9312345678901",
+    description: "带壳夏威夷果,每公斤报价，港币（HKD）结算。",
+    price: 56.0,
+    cost: 56.35,
+    createdAtIso: "2026-06-02T11:30:00+08:00",
+    attachments: [
+      { type: "pdf", url: "/files/public/invoice-ref-202500062-summary.pdf" },
+      { type: "image", url: "/files/public/macadamia-inshell-b-grade-202606.jpg" },
+    ],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "夏威夷果（帶殼）",
+      packaging: "大宗：散裝／噸袋過磅（按 kg 出貨；港幣計價）",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "澳洲（昆士蘭 Bundaberg／Gympie）／南非（林波波省；依外包裝批次噴碼）",
+        加工方式: "帶殼蒸汽滅酶、分級篩選、浮選去雜",
+        等級: "B 級（帶殼；果仁水份 ≤1.8%，殼厚與浮選比例依批次 COA）",
+        保質期: "18 個月（未開封）",
+        最後審核: "2026-06-18 品控覆核；與 SEED-PO-202606-018 同批檢驗摘要歸檔",
+      },
+      customAttributes: {
+        儲存條件: "主倉 WH-MAIN 乾貨區陰涼乾燥、密封避光；避免與強味貨品混放，防潮防蟲。",
+        過敏提示: "含堅果，過敏體質請留意。",
+        內部備註:
+          "大宗入庫單價與 SEED-PO-202603-312、202605-007、202606-018 區間一致（56.0–57.1 HKD/kg）；06-12 盤點調整見 SEED-ADJ-202606-STOCKTAKE。",
+      },
+      bom: [],
+      pricingTiers: [
+        { name: "現貨 ≤5 噸", price: 58 },
+        { name: "5–20 噸", price: 56 },
+        { name: "年約 ≥20 噸", price: 54 },
       ],
     },
   },
@@ -289,6 +315,9 @@ export async function syncNutCatalog(db: PrismaClient, companyId: string): Promi
     }
 
     const mergedAttributes = mergeNutCatalogAttributes(existing.attributes, row.attributes);
+    /** 帶殼夏威夷果主檔曾用較少 specs 欄位；與 PROD-001～004 對齊時需整段覆寫以免殘留舊鍵 */
+    const attributesForDb =
+      row.sku === "MAC-B-INSHELL-KG" ? row.attributes : mergedAttributes;
 
     await db.product.update({
       where: { id: existing.id },
@@ -298,7 +327,7 @@ export async function syncNutCatalog(db: PrismaClient, companyId: string): Promi
         description: row.description,
         price: row.price,
         cost: row.cost,
-        attributes: mergedAttributes,
+        attributes: attributesForDb,
         createdAt: new Date(row.createdAtIso),
         ...(attachmentsEmpty(existing.attachments) ? { attachments: row.attachments } : {}),
       },
