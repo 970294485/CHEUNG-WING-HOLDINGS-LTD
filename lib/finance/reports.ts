@@ -208,6 +208,7 @@ export async function getBalanceSheet(
   equity: BSRow[];
   retainedEarnings: string;
   totalAssets: string;
+  totalLiabilities: string;
   totalLiabEq: string;
 }> {
   const lines = await fetchPostedLinesThrough(companyId, asOf);
@@ -261,6 +262,7 @@ export async function getBalanceSheet(
     equity,
     retainedEarnings: cumulativePL.toFixed(2),
     totalAssets: totalAssets.toFixed(2),
+    totalLiabilities: totalLiab.toFixed(2),
     totalLiabEq: totalLiabEq.toFixed(2),
   };
 }

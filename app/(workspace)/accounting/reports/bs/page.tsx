@@ -99,6 +99,7 @@ export default async function BalanceSheetPage({
               ))}
             </tbody>
           </table>
+          <p className="mt-3 text-sm font-medium">合計：{bs.totalLiabilities}</p>
         </section>
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <h3 className="text-sm font-semibold text-violet-800 dark:text-violet-200">權益</h3>

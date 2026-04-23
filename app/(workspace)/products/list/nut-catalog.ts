@@ -66,7 +66,7 @@ export function mergeNutCatalogAttributes(
 }
 
 /**
- * 公司主數據中的堅果品類（碧根果、開心果、無殼核桃、杏仁、帶殼夏威夷果 B 級）。
+ * 公司主數據中的堅果品類（碧根果、開心果、無殼核桃、杏仁、腰果、帶殼夏威夷果 B 級）。
  * 由產品列表頁與 prisma seed 共用，透過 SKU 冪等 upsert，與庫存／銷售單據中的既有 productId 對齊。
  */
 export type NutCatalogRow = {
@@ -231,6 +231,46 @@ export const NUT_CATALOG: NutCatalogRow[] = [
       pricingTiers: [
         { name: "標準批發", price: 108 },
         { name: "禮盒綁定量 ≥300 kg", price: 104 },
+      ],
+    },
+  },
+  {
+    sku: "PROD-005",
+    name: "腰果（原味整仁）",
+    barcode: "6950234517840",
+    description:
+      "越南／印度進口整仁腰果，輕烤原味；港幣（HKD）每公斤結算，大宗按 kg 過磅出貨。2026-06 由採購補建主檔；驗收依 W320 粒徑與水份 ≤5% 等常見出口規格執行，適合零售分裝與烘焙配料。",
+    price: 125.0,
+    cost: 79.5,
+    createdAtIso: "2026-06-21T11:10:00+08:00",
+    attachments: [
+      { type: "image", url: "/files/public/cashew-kernel-w320-202606.jpg" },
+      { type: "pdf", url: "/files/public/lab-moisture-PROD-005-202606.pdf" },
+    ],
+    attributes: {
+      category: "堅果炒貨",
+      subCategory: "腰果",
+      packaging: "大宗：25 kg 食品級牛皮紙複合袋（內襯 PE）／噸袋可議；按 kg 過磅出貨（港幣計價）",
+      specs: {
+        計價幣別: "港幣 HKD",
+        計價單位: "每公斤（HKD/kg）",
+        原料產地: "越南平福省／印度卡納塔克邦（依外包裝批次標示）",
+        加工方式: "脫殼、蒸汽殺菌、輕烤原味",
+        等級: "W320（整仁，顆粒數約 320 粒／磅；允收碎仁 ≤3% 依當批 COA）",
+        水份: "≤5.0%（2026-06 實測 4.2–4.6%）",
+        保質期: "12 個月（未開封）",
+        最後審核: "2026-06-22 品控覆核",
+      },
+      customAttributes: {
+        儲存條件: "陰涼乾燥、密封避光；開封後請冷藏並儘快用完以防油脂氧化。",
+        過敏提示: "含堅果（腰果），生產線或同倉可能接觸其他堅果。",
+        內部備註: "首批入庫單據待採購補登；Q3 建議與 PROD-004 杏仁組合促銷堆頭。",
+      },
+      bom: [],
+      pricingTiers: [
+        { name: "試單 ≤100 kg", price: 130 },
+        { name: "101–400 kg", price: 125 },
+        { name: "≥401 kg 年約", price: 119 },
       ],
     },
   },

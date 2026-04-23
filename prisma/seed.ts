@@ -53,6 +53,11 @@ async function main() {
     { code: "1100", name: "銀行存款", type: "ASSET", sortOrder: 20 },
     { code: "1200", name: "應收賬款", type: "ASSET", sortOrder: 30 },
     { code: "2000", name: "應付賬款", type: "LIABILITY", sortOrder: 40 },
+    { code: "2010", name: "短期借款", type: "LIABILITY", sortOrder: 41 },
+    { code: "2100", name: "預收賬款", type: "LIABILITY", sortOrder: 42 },
+    { code: "2150", name: "應付職工薪津", type: "LIABILITY", sortOrder: 43 },
+    { code: "2200", name: "應交稅費", type: "LIABILITY", sortOrder: 44 },
+    { code: "2250", name: "其他應付款", type: "LIABILITY", sortOrder: 45 },
     { code: "3000", name: "實收資本", type: "EQUITY", sortOrder: 50 },
     { code: "4000", name: "營業收入", type: "REVENUE", sortOrder: 60 },
     { code: "5000", name: "營業成本", type: "EXPENSE", sortOrder: 70 },
@@ -81,6 +86,66 @@ async function main() {
       description: { contains: "（演示）" },
     },
   });
+
+  /** 資產負債表負債欄演示：冪等重建（與手動憑證分開） */
+  await prisma.journalEntry.deleteMany({
+    where: { companyId: company.id, sourceType: "SEED_BS_LIABILITIES" },
+  });
+
+  const seedBsLiabAt = (day: number) => new Date(2026, 0, day, 12, 0, 0);
+  const catId = genCat.id;
+  const jl = (
+    entryNo: string,
+    sourceId: string,
+    at: Date,
+    description: string,
+    pairs: { code: string; debit: string; credit: string; memo: string }[],
+  ) =>
+    prisma.journalEntry.create({
+      data: {
+        companyId: company.id,
+        entryNo,
+        entryDate: at,
+        description,
+        status: "POSTED",
+        sourceType: "SEED_BS_LIABILITIES",
+        sourceId,
+        lines: {
+          create: pairs.map((p) => ({
+            glAccountId: glByCode[p.code]!,
+            debit: new Prisma.Decimal(p.debit),
+            credit: new Prisma.Decimal(p.credit),
+            memo: p.memo,
+            accountingCategoryId: catId,
+          })),
+        },
+      },
+    });
+
+  await jl("SEED-BS-LIAB-001", "001", seedBsLiabAt(6), "預收客戶訂金入賬（BS種子）", [
+    { code: "1100", debit: "128000.00", credit: "0", memo: "銀行收款" },
+    { code: "2100", debit: "0", credit: "128000.00", memo: "預收賬款" },
+  ]);
+  await jl("SEED-BS-LIAB-002", "002", seedBsLiabAt(8), "營運週轉短期借款撥入（BS種子）", [
+    { code: "1100", debit: "250000.00", credit: "0", memo: "貸款入賬" },
+    { code: "2010", debit: "0", credit: "250000.00", memo: "短期借款" },
+  ]);
+  await jl("SEED-BS-LIAB-003", "003", seedBsLiabAt(10), "供應商原料款暫估應付（BS種子）", [
+    { code: "5000", debit: "168500.00", credit: "0", memo: "進貨暫估" },
+    { code: "2000", debit: "0", credit: "168500.00", memo: "應付賬款" },
+  ]);
+  await jl("SEED-BS-LIAB-004", "004", seedBsLiabAt(12), "本期應計職工薪津（BS種子）", [
+    { code: "5100", debit: "42880.00", credit: "0", memo: "薪津費用" },
+    { code: "2150", debit: "0", credit: "42880.00", memo: "應付職工薪津" },
+  ]);
+  await jl("SEED-BS-LIAB-005", "005", seedBsLiabAt(14), "應交稅費暫估（BS種子）", [
+    { code: "5100", debit: "15620.40", credit: "0", memo: "稅費" },
+    { code: "2200", debit: "0", credit: "15620.40", memo: "應交稅費" },
+  ]);
+  await jl("SEED-BS-LIAB-006", "006", seedBsLiabAt(16), "倉租及雜項其他應付款（BS種子）", [
+    { code: "5100", debit: "3840.00", credit: "0", memo: "倉租雜費" },
+    { code: "2250", debit: "0", credit: "3840.00", memo: "其他應付款" },
+  ]);
 
   const y = new Date().getFullYear();
   const m = new Date().getMonth();
@@ -364,7 +429,7 @@ async function main() {
   // --- End RBAC Seed ---
 
   // --- Products & Inventory ---
-  /** 堅果主數據（PROD-001～004），與產品列表 / 採購種子共用 */
+  /** 堅果主數據（PROD-001～005 等），與產品列表 / 採購種子共用 */
   await syncNutCatalog(prisma, company.id);
 
   /** 採購單（2026/03–06）：堅果大宗＋帶殼夏威夷果，與庫存種子、供應商敘述一致；依單號冪等 upsert */
