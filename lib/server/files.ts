@@ -1,6 +1,6 @@
 "use server";
 
-import { mkdir, unlink, writeFile } from "fs/promises";
+import { copyFile, mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
@@ -81,7 +81,8 @@ export async function getPersonalDrivePagePayload(): Promise<PersonalDriveLoadRe
 
 const PERSONAL_DRIVE_ROOT_PREFIX = "__pd_root__";
 
-async function listPersonalDriveCategoryOptions(
+/** 個人網盤可選分類（與上傳／歸類一致），供公共庫「存到個人網盤」等使用。 */
+export async function listPersonalDriveCategoryOptions(
   companyId: string,
   userId: string,
 ): Promise<PersonalDriveCategoryOption[]> {
@@ -185,12 +186,12 @@ export async function listPersonalFileDocuments(): Promise<FileDocumentRow[]> {
   }));
 }
 
-export async function listPublicFileDocuments(): Promise<
-  (FileDocumentRow & { ownerName: string | null })[]
-> {
-  await requireFilesRead();
-  const companyId = await requireCompanyId();
+export type PublicFileListRow = FileDocumentRow & {
+  ownerName: string | null;
+  inPersonalDrive: boolean;
+};
 
+async function queryPublicFileDocumentsRows(companyId: string, userId: string): Promise<PublicFileListRow[]> {
   const rows = await prisma.fileDocument.findMany({
     where: { companyId, isPublic: true },
     orderBy: { createdAt: "desc" },
@@ -217,6 +218,25 @@ export async function listPublicFileDocuments(): Promise<
       : [];
   const ownerMap = new Map(owners.map((u) => [u.id, u.name?.trim() || u.email]));
 
+  const publicIds = rows.map((r) => r.id);
+  /** 使用 raw SQL，避免本地 @prisma/client 未執行 generate 時 findMany 不認識 copiedFromPublicFileId */
+  const linkedRows =
+    publicIds.length === 0
+      ? []
+      : await prisma.$queryRaw<Array<{ copiedFromPublicFileId: string | null }>>(
+          Prisma.sql`
+            SELECT "copiedFromPublicFileId"
+            FROM "FileDocument"
+            WHERE "companyId" = ${companyId}
+              AND "ownerId" = ${userId}
+              AND "copiedFromPublicFileId" IS NOT NULL
+              AND "copiedFromPublicFileId" IN (${Prisma.join(publicIds)})
+          `,
+        );
+  const inPersonalDriveSet = new Set(
+    linkedRows.map((x) => x.copiedFromPublicFileId).filter((id): id is string => id != null),
+  );
+
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -228,7 +248,45 @@ export async function listPublicFileDocuments(): Promise<
     categoryId: r.categoryId,
     categoryName: r.category?.name ?? null,
     ownerName: r.ownerId ? ownerMap.get(r.ownerId) ?? null : null,
+    inPersonalDrive: inPersonalDriveSet.has(r.id),
   }));
+}
+
+export type PublicLibraryPagePayloadResult =
+  | { ok: true; files: PublicFileListRow[] }
+  | {
+      ok: false;
+      reason: "not_logged_in" | "no_permission" | "no_company";
+      /** 默認公司解析失敗時的原始錯誤，便於排查 */
+      detail?: string;
+    };
+
+/** 供公共庫 RSC 使用：不拋錯，區分未登入／無文件權限／公司配置問題。 */
+export async function getPublicLibraryPagePayload(): Promise<PublicLibraryPagePayloadResult> {
+  const session = await getSession();
+  if (!session?.sub) return { ok: false, reason: "not_logged_in" };
+  if (!canReadFiles(session.isSuperAdmin === true, session.permissions ?? [])) {
+    return { ok: false, reason: "no_permission" };
+  }
+  let companyId: string;
+  try {
+    companyId = await getDefaultCompanyId();
+  } catch (e) {
+    return {
+      ok: false,
+      reason: "no_company",
+      detail: e instanceof Error ? e.message : String(e),
+    };
+  }
+  const files = await queryPublicFileDocumentsRows(companyId, session.sub);
+  return { ok: true, files };
+}
+
+export async function listPublicFileDocuments(): Promise<PublicFileListRow[]> {
+  await requireFilesRead();
+  const companyId = await requireCompanyId();
+  const userId = await requireSessionSub();
+  return queryPublicFileDocumentsRows(companyId, userId);
 }
 
 export async function uploadPersonalFileDocument(formData: FormData): Promise<{ ok: boolean; error?: string }> {
@@ -286,6 +344,88 @@ export async function uploadPersonalFileDocument(formData: FormData): Promise<{ 
     return { ok: true };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "上傳失敗";
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * 將公共庫中的一條檔案複製到當前用戶的個人網盤（新記錄 + 新存儲路徑），不修改原公共檔案。
+ */
+export async function copyPublicFileToPersonalDrive(
+  publicFileId: string,
+  categoryId: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireFilesManage();
+    const companyId = await requireCompanyId();
+    const userId = await requireSessionSub();
+
+    const sourceId = publicFileId.trim();
+    if (!sourceId) return { ok: false, error: "無效的檔案" };
+
+    const source = await prisma.fileDocument.findFirst({
+      where: { id: sourceId, companyId, isPublic: true },
+      select: { id: true, name: true, size: true, mimeType: true },
+    });
+    if (!source) return { ok: false, error: "找不到公共檔案或無權複製" };
+
+    const srcPath = fileDocumentDiskPath(companyId, source.id);
+    const newId = randomUUID();
+    const destPath = fileDocumentDiskPath(companyId, newId);
+
+    let nextCategoryId: string | null = null;
+    let isPublic = false;
+    const rawCat = categoryId?.trim() ?? "";
+    if (rawCat) {
+      const cat = await prisma.fileCategory.findFirst({
+        where: { id: rawCat, companyId },
+        select: { id: true, isPublic: true, ownerId: true, name: true },
+      });
+      if (!cat) return { ok: false, error: "所選分類不存在" };
+      if (cat.name.startsWith(PERSONAL_DRIVE_ROOT_PREFIX)) {
+        return { ok: false, error: "所選分類不可用" };
+      }
+      if (cat.ownerId != null && cat.ownerId !== userId) {
+        return { ok: false, error: "僅可選擇公司分類或自己的個人文件夾" };
+      }
+      nextCategoryId = cat.id;
+      isPublic = cat.isPublic;
+    }
+
+    await mkdir(path.dirname(destPath), { recursive: true });
+    try {
+      await copyFile(srcPath, destPath);
+    } catch {
+      return { ok: false, error: "來源檔案不存在或無法讀取" };
+    }
+
+    await prisma.$executeRaw(
+      Prisma.sql`
+        INSERT INTO "FileDocument" (
+          "id", "companyId", "categoryId", "name", "size", "url", "mimeType",
+          "ownerId", "isPublic", "copiedFromPublicFileId", "createdAt", "updatedAt"
+        ) VALUES (
+          ${newId},
+          ${companyId},
+          ${nextCategoryId},
+          ${source.name},
+          ${source.size},
+          ${`${companyId}/${newId}`},
+          ${source.mimeType},
+          ${userId},
+          ${isPublic},
+          ${source.id},
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        )
+      `,
+    );
+
+    revalidatePath("/files/personal-drive");
+    revalidatePath("/files/public-library");
+    return { ok: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "複製失敗";
     return { ok: false, error: msg };
   }
 }

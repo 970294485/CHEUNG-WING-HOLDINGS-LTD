@@ -35,16 +35,43 @@ if (
 }
 process.env.DIRECT_URL = directUrl;
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 const log: Prisma.LogLevel[] =
   process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createPrismaClient() {
+  return new PrismaClient({
     log,
     datasources: { db: { url: databaseUrl } },
   });
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+/**
+ * globalThis 上的 PrismaClient 可能早於最近一次 `prisma generate`（例如 dev 熱更新、
+ * 或舊程序未退出），舊實例沒有新 model 的 delegate，會出現 `undefined.count`。
+ * 一律偵測並換成當前 `@prisma/client` 對應的新實例；development / production 皆適用。
+ */
+function needsPrismaClientReplace(c: PrismaClient | null | undefined): boolean {
+  if (c == null) return true;
+  type WithDelegates = {
+    documentCaseCategory?: { count?: (...args: unknown[]) => Promise<unknown> };
+    documentCase?: { count?: (...args: unknown[]) => Promise<unknown> };
+  };
+  const x = c as unknown as WithDelegates;
+  return (
+    typeof x.documentCaseCategory?.count !== "function" ||
+    typeof x.documentCase?.count !== "function"
+  );
+}
+
+export const prisma: PrismaClient = (() => {
+  let g: PrismaClient | undefined = globalForPrisma.prisma;
+  if (needsPrismaClientReplace(g)) {
+    if (g) void g.$disconnect().catch(() => {});
+    g = createPrismaClient();
+    globalForPrisma.prisma = g;
+    return g;
+  }
+  return g as PrismaClient;
+})();

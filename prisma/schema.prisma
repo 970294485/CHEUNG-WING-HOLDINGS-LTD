@@ -54,6 +54,8 @@ model Company {
   purchaseOrders        PurchaseOrder[]
   fileCategories        FileCategory[]
   fileDocuments         FileDocument[]
+  documentCaseCategories DocumentCaseCategory[]
+  documentCases         DocumentCase[]
   approvalLogs          ApprovalLog[]
 }
 
@@ -608,9 +610,60 @@ model FileDocument {
   mimeType   String?
   ownerId    String? // 上传者 User ID
   isPublic   Boolean  @default(false)
+  /// 若由公共庫「存到個人網盤」或種子複製產生，指向當時的公共檔 id（來源刪除時置空）
+  copiedFromPublicFileId String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   category FileCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  copySource FileDocument?  @relation("DocumentCopiedFromPublic", fields: [copiedFromPublicFileId], references: [id], onDelete: SetNull)
+  copiedAsPersonal FileDocument[] @relation("DocumentCopiedFromPublic")
+}
+
+/// 案件狀態（文件與導出模組）
+enum DocumentCaseStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  ARCHIVED
+}
+
+/// 案件分類（可層級）
+model DocumentCaseCategory {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  parentId    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company  Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent   DocumentCaseCategory?   @relation("DocumentCaseCategoryHierarchy", fields: [parentId], references: [id])
+  children DocumentCaseCategory[]  @relation("DocumentCaseCategoryHierarchy")
+  cases    DocumentCase[]
+
+  @@unique([companyId, parentId, name])
+}
+
+/// 案件主檔（歸檔、導出與網盤關聯用）
+model DocumentCase {
+  id          String             @id @default(cuid())
+  companyId   String
+  categoryId  String?
+  code        String
+  title       String
+  description String?
+  status      DocumentCaseStatus @default(OPEN)
+  openedAt    DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  company  Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category DocumentCaseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, code])
 }

@@ -9,7 +9,11 @@ import {
 import bcrypt from "bcryptjs";
 import { syncNutCatalog } from "../app/(workspace)/products/list/nut-catalog";
 import { ensureQ2NutPurchaseOrders } from "../app/(workspace)/data-entry/purchase-orders/purchase-orders-q2-seed";
-import { seedPublicLibraryDocuments } from "./seed-public-library-files";
+import {
+  seedDemoPersonalCopiesFromPublicLibrary,
+  seedPublicLibraryDocuments,
+} from "./seed-public-library-files";
+import { seedDocumentCases } from "./seed-document-cases";
 
 const prisma = new PrismaClient();
 
@@ -381,9 +385,27 @@ async function main() {
     update: { description: "查看企業文件庫／公共庫" },
   });
 
+  const manageFilesPerm = await prisma.permission.upsert({
+    where: { action_resource: { action: "manage", resource: "files" } },
+    create: { action: "manage", resource: "files", description: "上傳／刪除企業文件與網盤" },
+    update: { description: "上傳／刪除企業文件與網盤" },
+  });
+
   await prisma.rolePermission.upsert({
     where: { roleId_permissionId: { roleId: adminRole.id, permissionId: allPerm.id } },
     create: { roleId: adminRole.id, permissionId: allPerm.id },
+    update: {},
+  });
+
+  /** 與 manage:all 冗餘但保證 JWT 內必有 files 字串，避免舊庫缺關聯時公共庫讀寫全失 */
+  await prisma.rolePermission.upsert({
+    where: { roleId_permissionId: { roleId: adminRole.id, permissionId: readFilesPerm.id } },
+    create: { roleId: adminRole.id, permissionId: readFilesPerm.id },
+    update: {},
+  });
+  await prisma.rolePermission.upsert({
+    where: { roleId_permissionId: { roleId: adminRole.id, permissionId: manageFilesPerm.id } },
+    create: { roleId: adminRole.id, permissionId: manageFilesPerm.id },
     update: {},
   });
 
@@ -1782,6 +1804,12 @@ async function main() {
 
   /** 公共文件數據庫：2026/03–06，與演示公司／庫存／請款／報價敘述對齊 */
   await seedPublicLibraryDocuments(prisma, company.id, publicLibOwnerIds);
+
+  /** 隨機將部分公共檔複製到演示賬號個人網盤（供公共庫頁展示「已在個人網盤」） */
+  await seedDemoPersonalCopiesFromPublicLibrary(prisma, company.id, demoUser.id);
+
+  /** 案件分類與管理：2026/03–06，與 QT／SEED-PO／預收／倉儲／導出敘述對齊 */
+  await seedDocumentCases(prisma, company.id);
 
   console.log("Seed OK:", company.code);
 }

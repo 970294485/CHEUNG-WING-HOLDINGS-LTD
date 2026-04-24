@@ -54,6 +54,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "文件與導出 (Documents)",
     items: [
       { title: "文件分類功能", href: "/files/categories" },
+      { title: "案件分類與管理", href: "/files/case-management" },
       { title: "個人網盤", href: "/files/personal-drive" },
       { title: "公共文件數據庫", href: "/files/public-library" },
       { title: "報價單/合同導出", href: "/exports/quotations" },

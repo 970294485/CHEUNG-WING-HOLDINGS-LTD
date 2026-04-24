@@ -1,7 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { fileDocumentDiskPath } from "../lib/files/storage";
 
 const PUBLIC_LIB_CAT_DESC = "__SEED_PUBLIC_LIBRARY_CATEGORY__";
@@ -14,6 +14,67 @@ const CATEGORY_DEFS: { key: PublicCatKey; name: string }[] = [
   { key: "warehouse", name: "倉儲與冷鏈" },
   { key: "product", name: "產品與銷售附件" },
 ];
+
+/** 先佔好三個頂層分類 id，避免「先刪公共檔再 create 分類」在 @@unique(公司,父級,名稱) 衝突時整段失敗、公共庫被清空。 */
+async function ensurePublicLibrarySeedCategoryIds(
+  prisma: PrismaClient,
+  companyId: string,
+): Promise<Record<PublicCatKey, string>> {
+  const catIdByKey = {} as Record<PublicCatKey, string>;
+  const defNames = CATEGORY_DEFS.map((c) => c.name);
+
+  for (const c of CATEGORY_DEFS) {
+    let hit = await prisma.fileCategory.findFirst({
+      where: {
+        companyId,
+        parentId: null,
+        name: c.name,
+        description: PUBLIC_LIB_CAT_DESC,
+      },
+      select: { id: true },
+    });
+    if (!hit) {
+      hit = await prisma.fileCategory.findFirst({
+        where: { companyId, parentId: null, name: c.name },
+        select: { id: true },
+      });
+    }
+    const row =
+      hit != null
+        ? await prisma.fileCategory.update({
+            where: { id: hit.id },
+            data: {
+              description: PUBLIC_LIB_CAT_DESC,
+              isPublic: true,
+              ownerId: null,
+            },
+            select: { id: true },
+          })
+        : await prisma.fileCategory.create({
+            data: {
+              companyId,
+              name: c.name,
+              description: PUBLIC_LIB_CAT_DESC,
+              parentId: null,
+              ownerId: null,
+              isPublic: true,
+            },
+            select: { id: true },
+          });
+    catIdByKey[c.key] = row.id;
+  }
+
+  await prisma.fileCategory.deleteMany({
+    where: {
+      companyId,
+      description: PUBLIC_LIB_CAT_DESC,
+      parentId: null,
+      name: { notIn: defNames },
+    },
+  });
+
+  return catIdByKey;
+}
 
 export async function seedPublicLibraryDocuments(
   prisma: PrismaClient,
@@ -271,6 +332,9 @@ export async function seedPublicLibraryDocuments(
   ];
 
   const seedFileNames = rows.map((r) => r.baseName);
+
+  Object.assign(catIdByKey, await ensurePublicLibrarySeedCategoryIds(prisma, companyId));
+
   await prisma.fileDocument.deleteMany({
     where: {
       companyId,
@@ -278,23 +342,6 @@ export async function seedPublicLibraryDocuments(
       OR: [{ name: { in: seedFileNames } }, { name: { contains: LEGACY_NAME_MARKER } }],
     },
   });
-  await prisma.fileCategory.deleteMany({
-    where: { companyId, description: PUBLIC_LIB_CAT_DESC },
-  });
-
-  for (const c of CATEGORY_DEFS) {
-    const row = await prisma.fileCategory.create({
-      data: {
-        companyId,
-        name: c.name,
-        description: PUBLIC_LIB_CAT_DESC,
-        parentId: null,
-        ownerId: null,
-        isPublic: true,
-      },
-    });
-    catIdByKey[c.key] = row.id;
-  }
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i]!;
@@ -320,5 +367,89 @@ export async function seedPublicLibraryDocuments(
         updatedAt: new Date(r.at),
       },
     });
+  }
+}
+
+function shuffleInPlace<T>(arr: T[]): void {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+}
+
+/**
+ * 演示用：將當前公司一部分公共檔隨機複製到指定用戶的個人網盤（帶 copiedFromPublicFileId，公共列表可顯示「已在個人網盤」）。
+ * 每次執行會先刪除該用戶此前所有「從公共庫複製」的個人檔（含磁碟），再重新隨機抽取。
+ */
+export async function seedDemoPersonalCopiesFromPublicLibrary(
+  prisma: PrismaClient,
+  companyId: string,
+  demoUserId: string,
+): Promise<void> {
+  const prev = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT "id" FROM "FileDocument"
+    WHERE "companyId" = ${companyId}
+      AND "ownerId" = ${demoUserId}
+      AND "copiedFromPublicFileId" IS NOT NULL
+  `;
+  for (const p of prev) {
+    try {
+      await unlink(fileDocumentDiskPath(companyId, p.id));
+    } catch {
+      /* 檔案可能已不存在 */
+    }
+  }
+  await prisma.$executeRaw`
+    DELETE FROM "FileDocument"
+    WHERE "companyId" = ${companyId}
+      AND "ownerId" = ${demoUserId}
+      AND "copiedFromPublicFileId" IS NOT NULL
+  `;
+
+  const publicRows = await prisma.fileDocument.findMany({
+    where: { companyId, isPublic: true },
+    select: { id: true, name: true, size: true, mimeType: true },
+  });
+  if (publicRows.length === 0) return;
+
+  shuffleInPlace(publicRows);
+  const ratio = 0.38;
+  const take = Math.min(
+    publicRows.length,
+    Math.max(4, Math.round(publicRows.length * ratio)),
+  );
+  const pick = publicRows.slice(0, take);
+
+  for (const src of pick) {
+    const newId = randomUUID();
+    const srcPath = fileDocumentDiskPath(companyId, src.id);
+    const destPath = fileDocumentDiskPath(companyId, newId);
+    await mkdir(path.dirname(destPath), { recursive: true });
+    try {
+      await copyFile(srcPath, destPath);
+    } catch {
+      continue;
+    }
+    await prisma.$executeRaw(
+      Prisma.sql`
+        INSERT INTO "FileDocument" (
+          "id", "companyId", "categoryId", "name", "size", "url", "mimeType",
+          "ownerId", "isPublic", "copiedFromPublicFileId", "createdAt", "updatedAt"
+        ) VALUES (
+          ${newId},
+          ${companyId},
+          NULL,
+          ${src.name},
+          ${src.size},
+          ${`${companyId}/${newId}`},
+          ${src.mimeType},
+          ${demoUserId},
+          false,
+          ${src.id},
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        )
+      `,
+    );
   }
 }
