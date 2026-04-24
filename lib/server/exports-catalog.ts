@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getDefaultCompanyId } from "@/lib/company";
 import { getSession } from "@/lib/auth/session";
 import { canReadExports } from "@/lib/rbac/exports-access";
+import { pickPaymentRequestExportApplicant } from "@/lib/finance/payment-request-export-applicant";
+import { stripPaymentRequestSeedTitleSuffix } from "@/lib/finance/unified-accounts-payable";
 
 export type ExportDataResult<T> =
   | { ok: true; rows: T[] }
@@ -43,8 +45,8 @@ function salesStatusLabel(s: SalesDocumentStatus): string {
 function prStatusLabel(s: PaymentRequestStatus): string {
   const m: Record<PaymentRequestStatus, string> = {
     DRAFT: "草稿",
-    SUBMITTED: "已提交",
-    APPROVED: "已審批",
+    SUBMITTED: "待審批",
+    APPROVED: "已通過",
     REJECTED: "已駁回",
     PAID: "已支付",
   };
@@ -106,7 +108,7 @@ export async function loadPaymentRequestsExportData(): Promise<
     id: string;
     title: string;
     department: string | null;
-    applicant: string | null;
+    applicant: string;
     date: string;
     amount: number;
     status: string;
@@ -126,14 +128,45 @@ export async function loadPaymentRequestsExportData(): Promise<
     ok: true,
     rows: rows.map((r) => ({
       id: r.id,
-      title: r.title,
+      title: stripPaymentRequestSeedTitleSuffix(r.title),
       department: r.department,
-      applicant: r.requestedBy,
-      date: r.createdAt.toISOString().slice(0, 10),
+      applicant: pickPaymentRequestExportApplicant(r.id),
+      date: r.createdAt.toLocaleDateString("en-CA", { timeZone: "Asia/Hong_Kong" }),
       amount: decToNumber(r.amount),
       status: prStatusLabel(r.status),
     })),
   };
+}
+
+/** 依當前列表選中的請款單 ID 導出 Excel（須具備導出權限，且 ID 須屬於當前公司）。 */
+export async function exportPaymentRequestIdsExcel(ids: string[]): Promise<ExcelResult> {
+  const gate = await assertExportAccess();
+  if (!gate.ok) return { ok: false, error: "無權限或無公司資料" };
+  if (ids.length === 0) return { ok: false, error: "沒有可導出的記錄" };
+  const { companyId } = gate;
+  const rows = await prisma.paymentRequest.findMany({
+    where: { companyId, id: { in: ids } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (rows.length === 0) return { ok: false, error: "找不到對應的請款記錄" };
+  const headers = ["ID", "標題", "部門", "費用類別", "申請人", "申請日期", "金額 (HKD)", "狀態", "備註"];
+  const dataRows = rows.map((r) => [
+    r.id,
+    stripPaymentRequestSeedTitleSuffix(r.title),
+    r.department,
+    r.category,
+    pickPaymentRequestExportApplicant(r.id),
+    r.createdAt.toLocaleDateString("en-CA", { timeZone: "Asia/Hong_Kong" }),
+    decToNumber(r.amount),
+    prStatusLabel(r.status),
+    r.purpose,
+  ]);
+  return buildExcelBase64(
+    "請款導出",
+    headers,
+    dataRows,
+    `付款請求_當前公司_${new Date().toISOString().slice(0, 10)}.xlsx`,
+  );
 }
 
 export type PurchaseExportRow = {
